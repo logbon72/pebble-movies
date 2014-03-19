@@ -6,7 +6,11 @@ var SETTING_DEFAULT_CITY = "DefaultCity";
 var SETTING_DEFAULT_COUNTRY = "DefaultCountry";
 var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
 var MIN_SPLASH_TIME = 2000;
-
+var pebbleMessages = {
+    initFailed : 0,
+    startApp : 1
+};
+//console.log("Is this working");
 /**
  * 
  * @returns {PBMovies.service}
@@ -34,7 +38,7 @@ var PBMovies = function(initDoneCallback) {
             locationSet();
         } else {
             Pebble.sendAppMessage({
-                "status": 0,
+                "code": pebbleMessages.initFailed,
                 "message": "Location Unavailable, check settings"
             });
         }
@@ -196,24 +200,23 @@ var PBMovies = function(initDoneCallback) {
                 service.serviceError(key, xhr, onSuccess, onError);
             });
         },
-        
-        getTheatreMovies: function(theatre_id, onSuccess, onError) {
-            var key = "theatre_movies_" + theatre_id;
+        getTheatreMovies: function(theatreId, onSuccess, onError) {
+            var key = "theatre_movies_" + theatreId;
             var cached = service.isCached(key);
             if (cached) {
                 return onSuccess(cached);
             }
 
-            service.proxy('movie-theatres', {movie_id: theatre_id}, function(resp) {
-                service.cache(key, resp.movie_theatres);
-                onSuccess(resp.movie_theatres);
+            service.proxy('theatre-movies', {theatre_id: theatreId}, function(resp) {
+                service.cache(key, resp.theatre_movies);
+                onSuccess(resp.theatre_movies);
             }, function(xhr) {
                 service.serviceError(key, xhr, onSuccess, onError);
             });
         },
         serviceError: function(cacheKey, xhr, onSuccess, onError) {
             var cached = service.isCached(cacheKey, true);
-            if(cached){
+            if (cached) {
                 return onSuccess(cached);
             }
             if (onError) {
@@ -231,17 +234,20 @@ var PBMovies = function(initDoneCallback) {
 
 //the pebble app itself
 var movieService;
-Pebble.addEventListener("ready",
-        function(e) {
-            var timeSinceLaunch, timeStarted = currentTimeInMs();
-            movieService = new PBMovies(function() {
-                timeSinceLaunch = currentTimeInMs() - timeStarted;
-                setTimeout(function() {
-                    console.log("calling off splash screen");//
-                }, timeSinceLaunch >= MIN_SPLASH_TIME ? 10 : (MIN_SPLASH_TIME - timeSinceLaunch) + 10);
+Pebble.addEventListener("ready", function(e) {
+    var timeSinceLaunch, timeStarted = currentTimeInMs();
+    movieService = new PBMovies(function() {
+        timeSinceLaunch = currentTimeInMs() - timeStarted;
+        setTimeout(function() {
+            console.log("calling off splash screen");//
+            Pebble.sendAppMessage({
+                "code" : pebbleMessages.startApp
             });
-        }
-);
+        }, timeSinceLaunch >= MIN_SPLASH_TIME ? 10 : (MIN_SPLASH_TIME - timeSinceLaunch) + 10);
+    });
+});
+
+
 
 
 function serializeData(data) {

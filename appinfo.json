@@ -9,7 +9,7 @@
         "watchface": false
     },
     "appKeys": {
-        "status": 0,
+        "code": 0,
         "message": 1
     },
     "capabilities": ["location", "configurable"],
@@ -18,7 +18,7 @@
             {
                 "type": "png-trans",
                 "name": "IMAGE_SPLASH",
-                "file": "img/splash.png"
+                "file": "img/splash2.png"
             },
             {
                 "type": "png",
