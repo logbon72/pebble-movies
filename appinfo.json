@@ -1,0 +1,47 @@
+{
+    "uuid": "cf8b8759-8a8f-4182-8186-bd2d58edea35",
+    "shortName": "PebbMovies",
+    "longName": "PebbMovies- Movie Showtimes on Pebble",
+    "companyName": "Joseph Orilogbon",
+    "versionCode": 1,
+    "versionLabel": "1.0.0",
+    "watchapp": {
+        "watchface": false
+    },
+    "appKeys": {
+        "status": 0,
+        "message": 1
+    },
+    "capabilities": ["location", "configurable"],
+    "resources": {
+        "media": [
+            {
+                "type": "png-trans",
+                "name": "IMAGE_SPLASH",
+                "file": "img/splash.png"
+            },
+            {
+                "type": "png",
+                "name": "ICON_MAIN",
+                "file": "icons/icon.png",
+                "menuIcon": true
+            },
+            {
+                "type": "png-trans",
+                "name": "ICON_FILM",
+                "file": "icons/icon2.png"
+            },
+            {
+                "type": "png-trans",
+                "name": "ICON_THEATRE",
+                "file": "icons/theatre.png"
+            },
+            {
+                "type": "png-trans",
+                "name": "ICON_MOVIE",
+                "file": "icons/movie.png"
+            }
+        ]
+    }
+
+}
