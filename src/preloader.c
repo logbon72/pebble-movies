@@ -7,7 +7,7 @@
 #define RADIUS_INITIAL 3
 #define ANIMATION_TIMEOUT 100
 static Layer *square_layer;
-
+static GBitmap *statusBarIcon;
 // Timers can be canceled with `app_timer_cancel()`
 //static AppTimer *timer;
 
@@ -40,6 +40,7 @@ static void unload(Window *w) {
     //window_destroy(window);
     app_timer_cancel(preloader.timer);
     text_layer_destroy(preloader.statusText);
+    gbitmap_destroy(statusBarIcon);
     preloader.isOn = 0;
 }
 
@@ -48,7 +49,10 @@ void preloader_init(char *text) {
     window_set_background_color(preloader.window, GColorBlack);
     window_set_status_bar_icon(preloader.window, statusBarIcon);
     Layer *window_layer = window_get_root_layer(preloader.window);
-    
+
+    if (!statusBarIcon) {
+        statusBarIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_STATUS_BAR);
+    }
 
 
     GRect bounds = layer_get_bounds(window_layer);
@@ -64,7 +68,7 @@ void preloader_init(char *text) {
     });
 
 
-    
+
     preloader.statusText = text_layer_create(GRect(0, 85, bounds.size.w, bounds.size.h - 110));
     text_layer_set_text(preloader.statusText, text);
     text_layer_set_background_color(preloader.statusText, GColorClear);

@@ -1,3 +1,4 @@
+#pragma once
 /* 
  * File:   preloader.h
  * Author: intelworx
@@ -11,6 +12,5 @@ struct PreloaderScreen {
     uint8_t isOn;
     AppTimer *timer;
 } preloader;
-
 
 void preloader_init(char* text);

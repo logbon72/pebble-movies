@@ -9,8 +9,11 @@
         "watchface": false
     },
     "appKeys": {
-        "code": 0,
-        "message": 1
+        "code": 0
+        , "message": 1
+        , "data": 2
+        , "page": 4
+        , "totalPages": 8
     },
     "capabilities": ["location", "configurable"],
     "resources": {
@@ -24,8 +27,8 @@
                 "type": "png",
                 "name": "ICON_STATUS_BAR",
                 "file": "icons/icon_status.png"
-            },
-            {
+            }
+            , {
                 "type": "png",
                 "name": "ICON_MAIN",
                 "file": "icons/icon.png",
@@ -35,8 +38,8 @@
                 "type": "png",
                 "name": "ICON_FILM",
                 "file": "icons/icon2.png"
-            },
-            {
+            }
+            ,{
                 "type": "png",
                 "name": "ICON_THEATRE",
                 "file": "icons/theatre.png"
@@ -59,6 +62,16 @@
                 "type": "png",
                 "name": "ICON_A_BAR_THEATRE",
                 "file": "icons/theatre_small.png"
+            }
+            , {
+                "type": "png",
+                "name": "ICON_A_BAR_UP",
+                "file": "icons/icon_up.png"
+            }
+            , {
+                "type": "png",
+                "name": "ICON_A_BAR_DOWN",
+                "file": "icons/icon_down.png"
             }
         ]
     }

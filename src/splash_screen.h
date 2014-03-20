@@ -1,4 +1,4 @@
-#include <pebble.h>
+#pragma once
 
 struct SplashScreen {
     Window *window;

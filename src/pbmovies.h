@@ -10,7 +10,9 @@
 enum APP_KEYS {
     APP_KEY_MSG_CODE = 0x0, // TUPLE_INT (0,1)
     APP_KEY_MESSAGE = 0x1, // TUPLE_CSTRING
-    APP_KEY_CITY_KEY = 0x2, // TUPLE_CSTRING
+    APP_KEY_DATA = 0x2, // TUPLE_CSTRING
+    APP_KEY_PAGE = 0x4, // TUPLE_CSTRING
+    APP_KEY_TOTAL_PAGES = 0x8, // TUPLE_CSTRING
     //APP_KEY_CITY_KEY = 0x2,         // TUPLE_CSTRING
 };
 
@@ -20,7 +22,14 @@ enum APP_KEYS {
 
 enum PbMsgIn {
     PB_MSG_IN_INIT_FAILED = 0,
-    PB_MSG_IN_START_APP = 1,
+    PB_MSG_IN_START_APP,
+    PB_MSG_IN_CONNECTION_ERROR,
+    PB_MSG_IN_MOVIES,
+    PB_MSG_IN_THEATRES,
+    PB_MSG_IN_THEATRE_MOVIES,
+    PB_MSG_IN_MOVIE_THEATRES,
+    PB_MSG_IN_SHOWTIMES,
+    PB_MSG_IN_NO_DATA,
 };
 
 enum PbMsgOut {
@@ -34,6 +43,11 @@ enum PbMsgOut {
 
 
 #define PB_OUTBOX_SIZE 64
-#define PB_INBOX_SIZE 1024
-const GBitmap *statusBarIcon;
+#define PB_INBOX_SIZE 1900
+#define DELIMITER_FIELD '|'
+#define DELIMITER_RECORD '\n'
+#define MSG_INTERVAL_WAIT_MS 3000
+
 void app_message_init(void);
+char** str_split(char*, const char);
+char *strdup(const char *);

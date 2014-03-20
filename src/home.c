@@ -33,13 +33,29 @@ static void home_screen_draw_header(GContext* ctx, const Layer *cell_layer, uint
 static void home_screen_select_handler(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
     // Use the row to specify which item will receive the select action
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Selected Index: %d", cell_index->row);
-    preloader_init("Loading whatever...");
+
+
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+    if (iter == NULL) {
+        return;
+    }
+    uint16_t msgId = cell_index->row ? PB_MSG_OUT_GET_THEATRES : PB_MSG_OUT_GET_MOVIES;
+    Tuplet msgCode = TupletInteger(APP_KEY_MSG_CODE, msgId);
+    dict_write_tuplet(iter, &msgCode);
+    dict_write_end(iter);
+    app_message_outbox_send();
+    if (cell_index->row == 0) {
+        preloader_init("Movies Loading...");
+    } else {
+        preloader_init("Theatres Loading...");
+    }
 }
 
 // This is the menu item draw callback where you specify what each item should look like
 
 static void home_screen_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
-    menu_cell_basic_draw(ctx, cell_layer, homeScreen.menuTexts[cell_index->row%2], NULL, homeScreen.menuIcons[cell_index->row%2]);
+    menu_cell_basic_draw(ctx, cell_layer, homeScreen.menuTexts[cell_index->row % 2], NULL, homeScreen.menuIcons[cell_index->row % 2]);
 }
 
 static void home_screen_load(Window *window) {

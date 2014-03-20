@@ -1,14 +1,39 @@
 var CACHE_EXPIRY = 1800000;
+
 var LOCATION_EXPIRY = 1200000;
 var LOCATION_TIMEOUT = 30000;
+
 var SETTING_DEFAULT_POSTAL_CODE = "PostalCode";
 var SETTING_DEFAULT_CITY = "DefaultCity";
 var SETTING_DEFAULT_COUNTRY = "DefaultCountry";
+var SETTING_DEFAULT_UNIT = "DefaultUnit";
+
 var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
+
 var MIN_SPLASH_TIME = 2000;
+var MAX_DATA_LENGTH = 1536;
+
+var DELIMETER_FIELD = "|";
+var DELIMETER_RECORD = "\n";
+
+var MAX_PAGES = 3;
+var MSG_INTERVAL = 2000;
+
+var DISTANCE_UNIT_KM = "km";
+var DISTANCE_UNIT_MILES = "mi";
+var DISTANCE_MILE_IN_M = 0.000621371;
+var DISTANCE_KM_IN_M = 0.001;
+
 var pebbleMessagesIn = {
     initFailed: 0,
-    startApp: 1
+    , startApp: 1
+    , connectionError: 2
+    , movies: 3
+    , theatres: 4
+    , theatreMovies: 5
+    , movieTheatres: 6
+    , showtimes: 7
+    , noData: 8
 };
 
 var pebbleMessagesOut = {
@@ -17,7 +42,7 @@ var pebbleMessagesOut = {
     getTheatres: 2,
     getTheatreMovies: 3,
     getMovieTheatres: 4,
-    getShowtimes: 5,
+    , getShowtimes: 5
 };
 //console.log("Is this working");
 /**
@@ -106,6 +131,91 @@ var PBMovies = function(initDoneCallback) {
         });
     };
 
+    var messageHandler = {
+        init: function() {
+            initFunction();
+        },
+        getMovies: function() {
+            service.getMovies(function(movies) {
+                if (movies.length > 0) {
+                    var movie, records = [];
+                    for (var i = 0; i < movies.length; i++) {
+                        //id,title,genre,user_rating,rated,critic_rating,runtime                    
+                        movie = objectValues(movies[i]);
+                        movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
+                        movie[4] = (!movie[4] || !movie[4].length) ? "NR" : movie[4];
+                        movie[4] = movie[4].replace(/Not Rated/i, "NR");
+                        movie[5] = Math.round(movie[5]);
+                        records.push(movie.join(DELIMETER_FIELD));
+                    }
+                    messageHandler.sendData(pebbleMessagesIn.movies, records.join(DELIMETER_RECORD));
+                } else {
+                    messageHandler.sendData("No movies at the moment");
+                }
+            }, messageHandler.handleErrors);
+        },
+        getTheatres: function() {
+            service.getTheatres(function(theatres) {
+                if (theatres.length > 0) {
+                    var theatre, records = [];
+                    for (var i = 0; i < theatres.length; i++) {
+                        //"id,name,address,distance_m"
+                        theatre = objectValues(theatres[i]);
+                        theatre[3] = theatreUtils.formatDistance(theatre[3]);
+                        records.push(theatre.join(DELIMETER_FIELD));
+                    }
+                    messageHandler.sendData(pebbleMessagesIn.theatres, records.join(DELIMETER_RECORD));
+                } else {
+                    messageHandler.sendData("No theatres near you");
+                }
+            }, messageHandler.handleErrors);
+        },
+        handleErrors: function(err) {
+            console.log("Errors occured while getting data :" + JSON.stringify(err));
+            Pebble.sendAppMessage({
+                "code": pebbleMessagesIn.connectionError,
+                "message": "Connection Error"
+            });
+        },
+        sendData: function(msgCode, data, currentPage) {
+            console.log("Sending data out, length: " + data.length);
+            if (!currentPage)
+                currentPage = 1;
+
+            var totalPages = Math.ceil(data.length / MAX_DATA_LENGTH);
+            var offset = (currentPage - 1) * MAX_DATA_LENGTH;
+            Pebble.sendAppMessage({
+                "code": msgCode
+                , "data": data.substring(offset, MAX_DATA_LENGTH)
+                , "page": currentPage
+                , "totalPages": totalPages
+            });
+            if (currentPage < totalPages && currentPage < MAX_PAGES) {
+                setTimeout(function() {
+                    messageHandler.sendData(msgCode, data, ++currentPage);
+                }, MSG_INTERVAL);
+            }
+        },
+        sendNoData: function(msg) {
+            Pebble.sendAppMessage({
+                "code": pebbleMessagesIn.noData,
+                "message": msg
+            });
+        }
+    };
+
+    var theatreUtils = {
+        formatDistance: function(dist) {
+            var distNum = parseFloat(dist);
+            if (distNum < 1 || isNaN(distNum)) {
+                return " ";
+            }
+            var prefUnit = service.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM);
+            var conversion = prefUnit === DISTANCE_UNIT_KM ? DISTANCE_KM_IN_M : DISTANCE_MILE_IN_M;
+            return Number(conversion * distNum).toPrecision(2) + prefUnit;
+        }
+    };
+    
     var service = {
         unStore: function(key) {
             delete localStorage[key];
@@ -116,11 +226,11 @@ var PBMovies = function(initDoneCallback) {
         store: function(key, val, asObject) {
             localStorage.setItem(key, asObject ? JSON.stringify(val) : val);
         },
-        get: function(key, asObject) {
+        get: function(key, asObject, defaultValue) {
             if (localStorage.hasOwnProperty(key)) {
                 return asObject ? JSON.parse(localStorage.getItem(key)) : localStorage.getItem(key);
             }
-            return null;
+            return defaultValue ? defaultValue : null;
         },
         proxy: function(command, data, successCallback, errorCallback) {
             var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
@@ -235,8 +345,19 @@ var PBMovies = function(initDoneCallback) {
                 }
             }
         },
-        handleMessage: function(e) {
-
+        handleMessage: function(payload) {
+            var msgCode = parseInt(payload.code);
+            for (var i in pebbleMessagesOut) {
+                if (pebbleMessagesIn[i] === msgCode) {
+                    if (messageHandler.hasOwnProperty(i)) {
+                        return messageHandler[i](payload);
+                    } else {
+                        console.log("Message handler does not have method for: " + i);
+                        return null;
+                    }
+                }
+            }
+            console.log("can't handle message code: " + msgCode);
         }
 
     };
@@ -270,9 +391,9 @@ Pebble.addEventListener("ready", function(e) {
 
 Pebble.addEventListener("appmessage",
         function(e) {
-            console.log("Received message: " + e.payload);
-            if(movieService){
-                movieService.handleMessage(e);
+            console.log("Received message: " + JSON.stringify(e.payload));
+            if (movieService) {
+                movieService.handleMessage(e.payload);
             }
         }
 );
@@ -341,6 +462,17 @@ var makeRequest = function(url, method, data, successHandler, errorHandler) {
     };
     xhr.send(data);
 };
+
+function objectValues(obj, exclude) {
+    var op = [];
+    var toExclude = exclude || [];
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key) && toExclude.indexOf(key) < 0) {
+            op.push(obj[key]);
+        }
+    }
+    return op;
+}
 
 function dateYmd() {
     var t = new Date();

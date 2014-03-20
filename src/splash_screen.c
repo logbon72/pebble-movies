@@ -2,6 +2,8 @@
 #include "pbmovies.h"
 #include "splash_screen.h"
 
+//struct SplsplashScreen splashScreen;
+
 static void splash_screen_select_handler(ClickRecognizerRef recognizer, void *context);
 static void splash_click_config_provider(void *context);
 static void splash_screen_load(Window *window);
@@ -75,7 +77,6 @@ static void splash_send_init(void) {
 void splash_screen_init(void) {
     splashScreen.window = window_create();
     window_set_click_config_provider(splashScreen.window, splash_click_config_provider);
-    statusBarIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_STATUS_BAR);
     window_set_window_handlers(splashScreen.window, (WindowHandlers) {
         .load = splash_screen_load,
         .unload = splash_screen_unload,
