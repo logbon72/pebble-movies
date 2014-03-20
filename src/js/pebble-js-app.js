@@ -6,9 +6,18 @@ var SETTING_DEFAULT_CITY = "DefaultCity";
 var SETTING_DEFAULT_COUNTRY = "DefaultCountry";
 var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
 var MIN_SPLASH_TIME = 2000;
-var pebbleMessages = {
-    initFailed : 0,
-    startApp : 1
+var pebbleMessagesIn = {
+    initFailed: 0,
+    startApp: 1
+};
+
+var pebbleMessagesOut = {
+    init: 0,
+    getMovies: 1,
+    getTheatres: 2,
+    getTheatreMovies: 3,
+    getMovieTheatres: 4,
+    getShowtimes: 5,
 };
 //console.log("Is this working");
 /**
@@ -38,7 +47,7 @@ var PBMovies = function(initDoneCallback) {
             locationSet();
         } else {
             Pebble.sendAppMessage({
-                "code": pebbleMessages.initFailed,
+                "code": pebbleMessagesIn.initFailed,
                 "message": "Location Unavailable, check settings"
             });
         }
@@ -225,6 +234,9 @@ var PBMovies = function(initDoneCallback) {
                 } catch (e) {
                 }
             }
+        },
+        handleMessage: function(e) {
+
         }
 
     };
@@ -233,20 +245,37 @@ var PBMovies = function(initDoneCallback) {
 };
 
 //the pebble app itself
+/**
+ * 
+ * @type PBMovies.service
+ */
 var movieService;
-Pebble.addEventListener("ready", function(e) {
+var initFunction = function() {
     var timeSinceLaunch, timeStarted = currentTimeInMs();
     movieService = new PBMovies(function() {
         timeSinceLaunch = currentTimeInMs() - timeStarted;
         setTimeout(function() {
             console.log("calling off splash screen");//
             Pebble.sendAppMessage({
-                "code" : pebbleMessages.startApp
+                "code": pebbleMessagesIn.startApp
             });
         }, timeSinceLaunch >= MIN_SPLASH_TIME ? 10 : (MIN_SPLASH_TIME - timeSinceLaunch) + 10);
     });
+};
+
+Pebble.addEventListener("ready", function(e) {
+    initFunction();
 });
 
+
+Pebble.addEventListener("appmessage",
+        function(e) {
+            console.log("Received message: " + e.payload);
+            if(movieService){
+                movieService.handleMessage(e);
+            }
+        }
+);
 
 
 

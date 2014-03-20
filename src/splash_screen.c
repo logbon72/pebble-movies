@@ -26,7 +26,7 @@ static void splash_screen_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
     window_set_background_color(window, GColorBlack);
-    window_set_fullscreen(window, true);
+    //window_set_fullscreen(window, true);
 
     splashScreen.statusText = text_layer_create((GRect) {
         .origin =
@@ -75,7 +75,7 @@ static void splash_send_init(void) {
 void splash_screen_init(void) {
     splashScreen.window = window_create();
     window_set_click_config_provider(splashScreen.window, splash_click_config_provider);
-
+    statusBarIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_STATUS_BAR);
     window_set_window_handlers(splashScreen.window, (WindowHandlers) {
         .load = splash_screen_load,
         .unload = splash_screen_unload,

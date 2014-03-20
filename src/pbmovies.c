@@ -1,21 +1,23 @@
 #include <pebble.h>
 #include "pbmovies.h"
 #include "splash_screen.h"
+#include "home.h"
 
-void handle_start_app(void);
-void handle_init_failed(const char *message);
+static void handle_start_app(void);
+static void handle_init_failed(const char *message);
 
 static void in_received_handler(DictionaryIterator *iter, void *context) {
     Tuple *msgCode = dict_find(iter, APP_KEY_MSG_CODE);
-    int msgType = msgCode->value->int16;
-
+    const uint8_t msgType = msgCode->value->uint8;
+    
+    Tuple *content;
     switch (msgType) {
         case PB_MSG_IN_INIT_FAILED:
-            //Tuple *message = dict_find(iter, APP_KEY_MESSAGE);
-            //handle_init_failed(message ? message->value->cstring : "");
+            content = dict_find(iter, APP_KEY_MESSAGE);
+            handle_init_failed(content->value->cstring);
             break;
         case PB_MSG_IN_START_APP:
-            //handle_start_app();
+            handle_start_app();
             break;
 
         default:
@@ -63,13 +65,15 @@ void app_message_init() {
 //    window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 //}
 
-void handle_init_failed(const char *message) {
+static void handle_init_failed(const char *message) {
     text_layer_set_text(splashScreen.statusText, message);
     splashScreen.loading = 0;
 }
 
-void handle_start_app() {
+static void handle_start_app() {
     splashScreen.loading = 0;
-    window_stack_pop(true);
+    window_stack_pop(false);
+    window_destroy(splashScreen.window);
     //init home screen
+    home_screen_init();
 }

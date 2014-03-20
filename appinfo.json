@@ -1,7 +1,7 @@
 {
     "uuid": "cf8b8759-8a8f-4182-8186-bd2d58edea35",
-    "shortName": "PebbMovies",
-    "longName": "PebbMovies- Movie Showtimes on Pebble",
+    "shortName": "Pebble Movies",
+    "longName": "Pebble Movies- Movie Showtimes on Pebble",
     "companyName": "Joseph Orilogbon",
     "versionCode": 1,
     "versionLabel": "1.0.0",
@@ -22,24 +22,43 @@
             },
             {
                 "type": "png",
+                "name": "ICON_STATUS_BAR",
+                "file": "icons/icon_status.png"
+            },
+            {
+                "type": "png",
                 "name": "ICON_MAIN",
                 "file": "icons/icon.png",
                 "menuIcon": true
             },
             {
-                "type": "png-trans",
+                "type": "png",
                 "name": "ICON_FILM",
                 "file": "icons/icon2.png"
             },
             {
-                "type": "png-trans",
+                "type": "png",
                 "name": "ICON_THEATRE",
                 "file": "icons/theatre.png"
             },
             {
-                "type": "png-trans",
+                "type": "png",
                 "name": "ICON_MOVIE",
                 "file": "icons/movie.png"
+            }, {
+                "type": "png",
+                "name": "ICON_A_BAR_SHOWTIME",
+                "file": "icons/showtime_small.png"
+            }
+            , {
+                "type": "png",
+                "name": "ICON_A_BAR_MOVIE",
+                "file": "icons/movie_small.png"
+            }
+            , {
+                "type": "png",
+                "name": "ICON_A_BAR_THEATRE",
+                "file": "icons/theatre_small.png"
             }
         ]
     }
