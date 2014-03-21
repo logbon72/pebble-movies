@@ -11,13 +11,13 @@ var SETTING_DEFAULT_UNIT = "DefaultUnit";
 var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
 
 var MIN_SPLASH_TIME = 2000;
-var MAX_DATA_LENGTH = 1536;
+var MAX_DATA_LENGTH = 480;
 
 var DELIMETER_FIELD = "|";
-var DELIMETER_RECORD = "\n";
+var DELIMETER_RECORD = "\t";
 
-var MAX_PAGES = 3;
-var MSG_INTERVAL = 2000;
+var MAX_PAGES = 5;
+var MSG_INTERVAL = 4000;
 
 var DISTANCE_UNIT_KM = "km";
 var DISTANCE_UNIT_MILES = "mi";
@@ -25,7 +25,7 @@ var DISTANCE_MILE_IN_M = 0.000621371;
 var DISTANCE_KM_IN_M = 0.001;
 
 var pebbleMessagesIn = {
-    initFailed: 0,
+    initFailed: 0
     , startApp: 1
     , connectionError: 2
     , movies: 3
@@ -41,7 +41,7 @@ var pebbleMessagesOut = {
     getMovies: 1,
     getTheatres: 2,
     getTheatreMovies: 3,
-    getMovieTheatres: 4,
+    getMovieTheatres: 4
     , getShowtimes: 5
 };
 //console.log("Is this working");
@@ -150,7 +150,7 @@ var PBMovies = function(initDoneCallback) {
                     }
                     messageHandler.sendData(pebbleMessagesIn.movies, records.join(DELIMETER_RECORD));
                 } else {
-                    messageHandler.sendData("No movies at the moment");
+                    messageHandler.sendNoData("No movies at the moment");
                 }
             }, messageHandler.handleErrors);
         },
@@ -158,7 +158,7 @@ var PBMovies = function(initDoneCallback) {
             service.getTheatres(function(theatres) {
                 if (theatres.length > 0) {
                     var theatre, records = [];
-                    for (var i = 0; i < theatres.length; i++) {
+                    for (var i = 0; i < 3/*theatres.length*/; i++) {
                         //"id,name,address,distance_m"
                         theatre = objectValues(theatres[i]);
                         theatre[3] = theatreUtils.formatDistance(theatre[3]);
@@ -166,7 +166,7 @@ var PBMovies = function(initDoneCallback) {
                     }
                     messageHandler.sendData(pebbleMessagesIn.theatres, records.join(DELIMETER_RECORD));
                 } else {
-                    messageHandler.sendData("No theatres near you");
+                    messageHandler.sendNoData("No theatres near you");
                 }
             }, messageHandler.handleErrors);
         },
@@ -178,18 +178,27 @@ var PBMovies = function(initDoneCallback) {
             });
         },
         sendData: function(msgCode, data, currentPage) {
-            console.log("Sending data out, length: " + data.length);
+            
+            if(data.match(/[^\x00-\x7F]/g)){
+                data = data.replace(/[^\x00-\x7F]/g, "*");
+            }
+            
             if (!currentPage)
                 currentPage = 1;
 
             var totalPages = Math.ceil(data.length / MAX_DATA_LENGTH);
+            //console.log("Sending page " + currentPage + " of " + totalPages);
             var offset = (currentPage - 1) * MAX_DATA_LENGTH;
-            Pebble.sendAppMessage({
+            var outData = {
                 "code": msgCode
-                , "data": data.substring(offset, MAX_DATA_LENGTH)
+                , "data": data.substring(offset, MAX_DATA_LENGTH * currentPage)
                 , "page": currentPage
                 , "totalPages": totalPages
-            });
+            };
+            console.log("Sending page " + currentPage + " of " + totalPages + " Length = " + outData.data.length);
+            
+            //console.log("Out data"+JSON.stringify(outData));
+            Pebble.sendAppMessage(outData);
             if (currentPage < totalPages && currentPage < MAX_PAGES) {
                 setTimeout(function() {
                     messageHandler.sendData(msgCode, data, ++currentPage);
@@ -215,7 +224,7 @@ var PBMovies = function(initDoneCallback) {
             return Number(conversion * distNum).toPrecision(2) + prefUnit;
         }
     };
-    
+
     var service = {
         unStore: function(key) {
             delete localStorage[key];
@@ -291,7 +300,7 @@ var PBMovies = function(initDoneCallback) {
                 service.serviceError(key, xhr, onSuccess, onError);
             });
         },
-        getTheatres: function() {
+        getTheatres: function(onSuccess, onError) {
             var key = "theatres";
             var cached = service.isCached(key);
             if (cached) {
@@ -348,7 +357,7 @@ var PBMovies = function(initDoneCallback) {
         handleMessage: function(payload) {
             var msgCode = parseInt(payload.code);
             for (var i in pebbleMessagesOut) {
-                if (pebbleMessagesIn[i] === msgCode) {
+                if (pebbleMessagesOut[i] === msgCode) {
                     if (messageHandler.hasOwnProperty(i)) {
                         return messageHandler[i](payload);
                     } else {
@@ -447,7 +456,7 @@ var makeRequest = function(url, method, data, successHandler, errorHandler) {
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
-                console.log(xhr.responseText);
+                //console.log(xhr.responseText);
                 if (successHandler) {
                     response = JSON.parse(xhr.responseText);
                     successHandler(response, xhr);

@@ -14,7 +14,7 @@ enum TheatreUiMode {
 struct TheatreUI {
     Window *window;
     ActionBarLayer *actionBar;
-    TextLayer *titleBar;
+    //TextLayer *titleBar;
     TextLayer *address;
     TextLayer *name;
     TextLayer *distance;
@@ -32,4 +32,4 @@ struct TheatreUI {
 struct TheatreUI theatresUI;
 //struct TheatreUI movieTheatresUI;
 
-void theatres_screen_init(char**, enum TheatreUiMode, char*);
+void theatres_screen_initialize(char**, int, enum TheatreUiMode, char*);

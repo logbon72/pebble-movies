@@ -8,7 +8,7 @@
 
 static void handle_start_app(void);
 static void handle_init_failed(const char *message);
-static void handle_data_received(uint8_t,uint8_t, uint8_t, char *);
+static void handle_data_received(uint8_t, uint8_t, uint8_t, char *);
 static void close_wait(void *);
 
 char *messageBuffer;
@@ -25,15 +25,17 @@ static void close_wait(void *context) {
     }
 }
 
-static void handle_data_received(uint8_t msgCode,uint8_t page, uint8_t totalPages, char *data) {
+static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPages, char *data) {
 
-    if(page !=1 && page != totalPages && !(currentWaiter || currentWaiter != msgCode)){
+    APP_LOG(APP_LOG_LEVEL_INFO, "Received data Length: %d, Page %d of %d", strlen(data), page, totalPages);
+    if (page != 1 && page != totalPages && !(currentWaiter || currentWaiter != msgCode)) {
         APP_LOG(APP_LOG_LEVEL_INFO, "Message discarded, wait is over already");
         return;
     }
-    
+
     if (!messageBuffer) {
         messageBuffer = strdup(data);
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "message copied to buffer");
     } else {
         char *tmp = strdup(messageBuffer);
         free(messageBuffer);
@@ -41,33 +43,44 @@ static void handle_data_received(uint8_t msgCode,uint8_t page, uint8_t totalPage
         messageBuffer = malloc(sizeof (char*) * newLen);
         strcat(messageBuffer, tmp);
         strcat(messageBuffer, data);
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Concatenation successful, size now: %d", strlen(messageBuffer));
         free(tmp);
     }
-    free(data);
+
+    //    if(data){
+    //        free(data);
+    //    }
+
+
+    if (inboxWaitTimer) {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Canceling timer");
+        app_timer_cancel(inboxWaitTimer);
+    }
 
     if (page == totalPages) {
-        if (inboxWaitTimer) {
-            app_timer_cancel(inboxWaitTimer);
-        }
-
         currentWaiter = MSG_CODE_NO_WAIT;
-        //next thing...
-        
-        char **dataRecords = str_split(messageBuffer, DELIMITER_RECORD);
+        //char **dataRecords = str_split(messageBuffer, DELIMITER_RECORD);
+        int length = 0;
+        char **dataRecords = str_split(messageBuffer, DELIMITER_RECORD, &length);
         free(messageBuffer);
+        messageBuffer = NULL;
+        
+        APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", length);
         window_stack_pop(false);
-        switch(msgCode){
-            case PB_MSG_IN_THEATRES:
-                theatres_screen_init(dataRecords, THEATRE_UI_MODE_THEATRES, NULL);
-                break;
+        switch (msgCode) {
             
+            case PB_MSG_IN_THEATRES:
+                theatres_screen_initialize(dataRecords, length, THEATRE_UI_MODE_THEATRES, NULL);
+                break;
+
             default:
                 APP_LOG(APP_LOG_LEVEL_DEBUG, "Message Code %d needs no handling", msgCode);
-        }       
-        
+        }
+
     } else {
         //some more messages expected, wait
         currentWaiter = msgCode;
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting timer...");
         inboxWaitTimer = app_timer_register(MSG_INTERVAL_WAIT_MS, close_wait, NULL);
     }
 
@@ -98,10 +111,10 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
         case PB_MSG_IN_SHOWTIMES:
             handle_data_received(msgType, page->value->uint8, totalPages->value->uint8, data->value->cstring);
             break;
-        
+
         case PB_MSG_IN_CONNECTION_ERROR:
         case PB_MSG_IN_NO_DATA:
-            if(preloader.statusText){
+            if (preloader.statusText) {
                 text_layer_set_text(preloader.statusText, message->value->cstring);
                 //@todo stop animation
             }
@@ -113,11 +126,11 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 }
 
 static void in_dropped_handler(AppMessageResult reason, void *context) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped!");
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped! Reason: %d ", reason);
 }
 
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Failed to Send!");
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Failed to Send! Reason : %d ", reason);
 }
 
 void app_message_init() {
@@ -128,6 +141,8 @@ void app_message_init() {
     // Init buffers
     app_message_open(PB_INBOX_SIZE, PB_OUTBOX_SIZE);
     //fetch_msg();
+    //uint32_t needed= dict_calc_buffer_size(3, sizeof (uint8_t), sizeof (uint8_t), 500 * sizeof (char*));
+    //APP_LOG(APP_LOG_LEVEL_INFO, "Needed Inbox %lu, available: %lu", needed, app_message_inbox_size_maximum());
 }
 //'const struct Tuplet * const' but argument is of type 'struct Tuple *'
 
@@ -170,44 +185,50 @@ char *strdup(const char *s) {
     return d; // Return new memory
 }
 
-char** str_split(char* a_str, const char a_delim) {
-    char** result = 0;
-    size_t count = 0;
-    char* tmp = a_str;
-    char* last_comma = 0;
-    char delim[2];
-    delim[0] = a_delim;
-    delim[1] = 0;
-
-    /* Count how many elements will be extracted. */
-    while (*tmp) {
-        if (a_delim == *tmp) {
-            count++;
-            last_comma = tmp;
+char** str_split(char *src_str, const char delimeter, int *length) {
+    //replace deliminator's with zeros and count how many
+    //sub strings with length >= 1 exist
+    int num_sub_str = 1;
+    char *loopTruStr = src_str;
+    short int found_delim = false;
+    while (*loopTruStr) {
+        if (*loopTruStr == delimeter) {
+            *loopTruStr = 0;
+            found_delim = true;
+        } else if (found_delim) { //found first character of a new string
+            num_sub_str++;
+            found_delim = false;
+            //sub_str_vec.push_back(src_str_tmp); //for c++
         }
-        tmp++;
+        loopTruStr++;
+    }
+    //printf("Start - found %d sub strings\n", num_sub_str);
+    if (num_sub_str <= 1) {
+        return (0);
     }
 
-    /* Add space for trailing token. */
-    count += last_comma < (a_str + strlen(a_str) - 1);
+    //if you want to use a c++ vector and push onto it, the rest of this function
+    //can be omitted (obviously modifying input parameters to take a vector, etc)
 
-    /* Add space for terminating null string so caller
-       knows where the list of returned strings ends. */
-    count++;
-
-    result = malloc(sizeof (char*) * count);
-
-    if (result) {
-        size_t idx = 0;
-        char* token = strtok(a_str, delim);
-
-        while (token) {
-            *(result + idx++) = strdup(token);
-            token = strtok(0, delim);
+    char **sub_strings = (char **) malloc((sizeof (char*) * num_sub_str) + 1);
+    const char *src_str_terminator = loopTruStr;
+    loopTruStr = src_str;
+    short int found_null = true;
+    int idx = 0;
+    while (loopTruStr < src_str_terminator) {
+        if (!*loopTruStr) //found a NULL
+            found_null = true;
+        else if (found_null) {
+            sub_strings[idx++] = loopTruStr;
+            //printf("sub_string_%d: [%s]\n", idx-1, sub_strings[idx-1]);
+            found_null = false;
         }
-        //assert(idx == count - 1);
-        *(result + idx) = 0;
+        loopTruStr++;
+    }
+    sub_strings[num_sub_str] = NULL;
+    if (length) {
+        *length = num_sub_str;
     }
 
-    return result;
+    return (sub_strings);
 }

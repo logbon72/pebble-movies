@@ -16,7 +16,7 @@ enum APP_KEYS {
     //APP_KEY_CITY_KEY = 0x2,         // TUPLE_CSTRING
 };
 
-#define ARR_COUNT(x)  (sizeof(x) / sizeof(x[0]));
+#define ARR_COUNT(x)  (sizeof(x) / sizeof(x[0]))
 
 //now define all message codes
 
@@ -43,11 +43,11 @@ enum PbMsgOut {
 
 
 #define PB_OUTBOX_SIZE 64
-#define PB_INBOX_SIZE 1900
+#define PB_INBOX_SIZE 2024
 #define DELIMITER_FIELD '|'
-#define DELIMITER_RECORD '\n'
-#define MSG_INTERVAL_WAIT_MS 3000
+#define DELIMITER_RECORD '\t'
+#define MSG_INTERVAL_WAIT_MS 10000
 
 void app_message_init(void);
-char** str_split(char*, const char);
+char** str_split(char*, const char, int*);
 char *strdup(const char *);
