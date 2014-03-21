@@ -48,6 +48,13 @@ enum PbMsgOut {
 #define DELIMITER_RECORD '\t'
 #define MSG_INTERVAL_WAIT_MS 10000
 
+char THEATRES_LIST[3072];
+char MOVIES_LIST[3072];
+char SHOWTIMES_LIST[1024];
 void app_message_init(void);
 char** str_split(char*, const char, int*);
 char *strdup(const char *);
+short int record_count(char* string, const char delimeter);
+char *str_dup_range(char* input, int offset, int len, char *dest);
+short int find_offset_of_nth_occurence(char* inString, char forChar, char terminator, int n, short int startFrom);
+char *get_data_at(char* data, int row, int col, char*, int);

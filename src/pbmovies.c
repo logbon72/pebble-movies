@@ -11,10 +11,11 @@ static void handle_init_failed(const char *message);
 static void handle_data_received(uint8_t, uint8_t, uint8_t, char *);
 static void close_wait(void *);
 
+static const char *blankStr = "";
 char *messageBuffer;
 AppTimer *inboxWaitTimer;
 uint8_t currentWaiter = MSG_CODE_NO_WAIT;
-char **dataRecords;
+//char **dataRecords;
 
 static void close_wait(void *context) {
     if (currentWaiter == MSG_CODE_NO_WAIT) {
@@ -60,27 +61,23 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
 
     if (page == totalPages) {
         currentWaiter = MSG_CODE_NO_WAIT;
-        //char **dataRecords = str_split(messageBuffer, DELIMITER_RECORD);
-        int length = 0;
-        dataRecords = str_split(messageBuffer, DELIMITER_RECORD, &length);
-        free(messageBuffer);
-        messageBuffer = NULL;
 
-        APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", length);
-        //        for(int i=0; i < length;i++){
-        //            APP_LOG(APP_LOG_LEVEL_DEBUG, "Record %d : %s", i+1, dataRecords[i]);
-        //        }
+        //APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", length);
+
         window_stack_pop(false);
         switch (msgCode) {
 
             case PB_MSG_IN_THEATRES:
-                theatresUI.theatres = dataRecords;
-                theatres_screen_initialize(length, THEATRE_UI_MODE_THEATRES, NULL);
+                strncpy(THEATRES_LIST, messageBuffer, strlen(messageBuffer));
+
+                free(messageBuffer);
+                theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), THEATRE_UI_MODE_THEATRES, NULL);
                 break;
 
             default:
                 APP_LOG(APP_LOG_LEVEL_DEBUG, "Message Code %d needs no handling", msgCode);
         }
+        messageBuffer = NULL;
 
     } else {
         //some more messages expected, wait
@@ -236,4 +233,80 @@ char** str_split(char *src_str, const char delimeter, int *length) {
     }
 
     return (sub_strings);
+}
+
+short int record_count(char* string, const char delimeter) {
+    int c = 0, count = 0;
+    while (string[c] != '\0') {
+        if (string[c] == delimeter) {
+            count++;
+        }
+        c++;
+    }
+
+    return count + 1;
+}
+
+char *str_dup_range(char* input, int offset, int len, char *dest) {
+    int input_len = strlen(input);
+    if (offset + len > input_len) {
+        return NULL;
+    }
+
+    //char *dest = malloc(sizeof (char*) * len);
+    strncpy(dest, input + offset, len);
+    
+    return dest;
+}
+
+short int find_offset_of_nth_occurence(char* inString, char forChar, char terminator, int n, short int startFrom) {
+    if (n <= 0) {
+        return startFrom;
+    }
+    short int offset, totalFound = 0;
+    for (offset = startFrom; (inString[offset] != terminator && inString[offset] != '\0'); offset++) {
+        if (inString[offset] == forChar) {
+            if (++totalFound == n) {
+                return offset;
+            }
+        }
+    }
+
+    return -1;
+}
+
+char *get_data_at(char* data, int row, int col, char dest[], int maxLength) {
+    int rowOffset = row <= 0 ? -1 : find_offset_of_nth_occurence(data, DELIMITER_RECORD, '\0', row, 0);
+    //get starting point of the row
+    //starting point of column, start reading from row
+    int colStartOffset = col <= 0 ? rowOffset : find_offset_of_nth_occurence(data, DELIMITER_FIELD, DELIMITER_RECORD, col, rowOffset + 1);
+
+    for(uint16_t i=0; i < maxLength-1; i++){
+        dest[i] = ' ';
+    }
+    dest[maxLength-1] = '\0';
+    //APP_LOG(APP_LOG_LEVEL_INFO, "Length : %d", maxLength);
+    //if none of such, then return NULL
+    strncpy(dest, blankStr, 1);
+    if (colStartOffset < 0 && col > 0) {
+        return dest;
+    }
+
+    //get ending of column
+    int colEndOffset = find_offset_of_nth_occurence(data, DELIMITER_FIELD, DELIMITER_RECORD, 1, colStartOffset + 1);
+    //not found? then probably record end
+    if (colEndOffset < 0) {
+        colEndOffset = find_offset_of_nth_occurence(data, DELIMITER_RECORD, '\0', 1, colStartOffset + 1);
+        //still not found ? then probably data end.
+        if (colEndOffset < 0) {
+            colEndOffset = strlen(data);
+        }
+    }
+
+    int lenTmp = colEndOffset - colStartOffset - 1;
+    if (lenTmp > (maxLength-1)) {
+        lenTmp = maxLength-1;
+    }
+    //APP_LOG(APP_LOG_LEVEL_INFO, "Offset %d to %d - Length = %d", colStartOffset, colEndOffset, lenTmp);
+    return str_dup_range(data, colStartOffset + 1, lenTmp, dest);
 }

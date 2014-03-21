@@ -49,27 +49,27 @@
                 "name": "ICON_MOVIE",
                 "file": "icons/movie.png"
             }, {
-                "type": "png",
+                "type": "png-trans",
                 "name": "ICON_A_BAR_SHOWTIME",
                 "file": "icons/showtime_small.png"
             }
             , {
-                "type": "png",
+                "type": "png-trans",
                 "name": "ICON_A_BAR_MOVIE",
                 "file": "icons/movie_small.png"
             }
             , {
-                "type": "png",
+                "type": "png-trans",
                 "name": "ICON_A_BAR_THEATRE",
                 "file": "icons/theatre_small.png"
             }
             , {
-                "type": "png",
+                "type": "png-trans",
                 "name": "ICON_A_BAR_UP",
                 "file": "icons/icon_up.png"
             }
             , {
-                "type": "png",
+                "type": "png-trans",
                 "name": "ICON_A_BAR_DOWN",
                 "file": "icons/icon_down.png"
             }

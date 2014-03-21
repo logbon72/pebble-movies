@@ -5,6 +5,10 @@
  *
  * Created on March 20, 2014, 11:54 AM
  */
+#define THEATRE_FLD_SIZE_ID 8
+#define THEATRE_FLD_SIZE_NAME 48
+#define THEATRE_FLD_SIZE_ADDR 32
+#define THEATRE_FLD_SIZE_DISTANCE 8
 
 enum TheatreUiMode {
     THEATRE_UI_MODE_THEATRES,
@@ -19,10 +23,10 @@ struct TheatreUI {
     TextLayer *name;
     TextLayer *distance;
     enum TheatreUiMode currentMode;
-    char **theatres;
+    //char **theatres;
     uint16_t currentIndex;
     uint16_t total;
-    char **current;
+    //char **current;
     char *currentMovie;
     GBitmap *upIcon;
     GBitmap *downIcon;
@@ -31,5 +35,12 @@ struct TheatreUI {
 
 struct TheatreUI theatresUI;
 //struct TheatreUI movieTheatresUI;
+
+struct TheatreRecord {
+    char id[THEATRE_FLD_SIZE_ID];
+    char name[THEATRE_FLD_SIZE_NAME];
+    char address[THEATRE_FLD_SIZE_ADDR];
+    char distance[THEATRE_FLD_SIZE_DISTANCE];
+} currentTheatre;
 
 void theatres_screen_initialize(int, enum TheatreUiMode, char*);

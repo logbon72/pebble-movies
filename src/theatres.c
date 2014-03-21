@@ -2,8 +2,6 @@
 #include "pbmovies.h"
 #include "theatres.h"
 
-#define THEATRE_EXPECTED_LENGTH 4
-
 static void set_current_theatre(uint16_t theatreIndex) {
     if (theatreIndex >= theatresUI.total) {
         theatreIndex = 0;
@@ -24,30 +22,22 @@ static void set_current_theatre(uint16_t theatreIndex) {
         action_bar_layer_clear_icon(theatresUI.actionBar, BUTTON_ID_DOWN);
     }
 
-    //    if (theatresUI.current) {
-    //        free(theatresUI.current);
-    //    }
 
-    //    for (int i = 0; i < theatresUI.total; i++) {
-    //        APP_LOG(APP_LOG_LEVEL_DEBUG, "Record %d : %s", i + 1, theatresUI.theatres[i]);
-    //    }
-    char *duplicated = strdup(theatresUI.theatres[theatreIndex]);
-    APP_LOG(APP_LOG_LEVEL_INFO, "Data at index %d is %s", theatreIndex, duplicated);
-    //    return;
-    int length = 0;
-    theatresUI.current = str_split(duplicated, DELIMITER_FIELD, &length);
-    //    free(duplicated);
+    get_data_at(THEATRES_LIST, theatreIndex, 0, currentTheatre.id, THEATRE_FLD_SIZE_ID);
+    get_data_at(THEATRES_LIST, theatreIndex, 1, currentTheatre.name, THEATRE_FLD_SIZE_NAME);
+    get_data_at(THEATRES_LIST, theatreIndex, 2, currentTheatre.address, THEATRE_FLD_SIZE_ADDR);
+    get_data_at(THEATRES_LIST, theatreIndex, 3, currentTheatre.distance, THEATRE_FLD_SIZE_DISTANCE);
 
-    if (length < THEATRE_EXPECTED_LENGTH) {
-        //        APP_LOG(APP_LOG_LEVEL_WARNING, "Expected Length %d, Found Length: %d", THEATRE_EXPECTED_LENGTH, length);
-        return; // set_current_theatre(++theatreIndex);
-    }
+//    APP_LOG(APP_LOG_LEVEL_INFO, "%s", currentTheatre.id);
+//    APP_LOG(APP_LOG_LEVEL_INFO, "%s", currentTheatre.name);
+//    APP_LOG(APP_LOG_LEVEL_INFO, "%s", currentTheatre.address);
+//    APP_LOG(APP_LOG_LEVEL_INFO, "%s", currentTheatre.distance);
 
     //set address - id, name, address, distance_m
-    text_layer_set_text(theatresUI.address, theatresUI.current[2]);
-    text_layer_set_text(theatresUI.name, theatresUI.current[1]);
-    if (strcmp(theatresUI.current[3], " ")) {
-        text_layer_set_text(theatresUI.distance, theatresUI.current[3]);
+    text_layer_set_text(theatresUI.address, currentTheatre.address);
+    text_layer_set_text(theatresUI.name, currentTheatre.name);
+    if (currentTheatre.distance && strcmp(currentTheatre.distance, " ")) {
+        text_layer_set_text(theatresUI.distance, currentTheatre.distance);
     } else {
         text_layer_set_text(theatresUI.distance, "");
     }
@@ -55,21 +45,25 @@ static void set_current_theatre(uint16_t theatreIndex) {
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-    if (theatresUI.current) {
+    if (currentTheatre.id) {
         if (theatresUI.currentMode == THEATRE_UI_MODE_THEATRES) {
-            APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get theatre movies for theatre ID: %s", theatresUI.current[0]);
+            APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get theatre movies for theatre ID: %s", currentTheatre.id);
         } else {
-            APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get showtimes for theatre ID: %s and Movie ID: %s", theatresUI.current[0], theatresUI.currentMovie);
+            APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get showtimes for theatre ID: %s and Movie ID: %s", currentTheatre.id, theatresUI.currentMovie);
         }
     }
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-    set_current_theatre(theatresUI.currentIndex - 1);
+    if (theatresUI.currentIndex > 0) {
+        set_current_theatre(theatresUI.currentIndex - 1);
+    }
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-    set_current_theatre(theatresUI.currentIndex + 1);
+    if (theatresUI.currentIndex < theatresUI.total - 1) {
+        set_current_theatre(theatresUI.currentIndex + 1);
+    }
 }
 
 static void theatre_click_config_provider(void *context) {
@@ -84,36 +78,33 @@ static void theatres_screen_load(Window *window) {
     uint16_t usableWidth = bounds.size.w - 30 - 10;
     uint16_t paddingSide = 10;
     //address
-    theatresUI.address = text_layer_create(GRect(paddingSide, 5, usableWidth, 40));
+    theatresUI.address = text_layer_create(GRect(paddingSide, 5, usableWidth, 50));
     text_layer_set_font(theatresUI.address, fonts_get_system_font(FONT_KEY_GOTHIC_14));
     layer_add_child(window_layer, text_layer_get_layer(theatresUI.address));
     //theatre name
-    theatresUI.name = text_layer_create(GRect(paddingSide, 41, usableWidth, 70));
-    text_layer_set_font(theatresUI.name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    theatresUI.name = text_layer_create(GRect(paddingSide, 51, usableWidth, 80));
+    text_layer_set_font(theatresUI.name, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
     layer_add_child(window_layer, text_layer_get_layer(theatresUI.name));
 
 
     //distance
-    theatresUI.distance = text_layer_create(GRect(paddingSide, 112, usableWidth, 15));
-    text_layer_set_font(theatresUI.distance, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+    theatresUI.distance = text_layer_create(GRect(paddingSide, 131, usableWidth, 15));
+    text_layer_set_font(theatresUI.distance, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_text_alignment(theatresUI.distance, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(theatresUI.distance));
 
-    for (int i = 0; i < theatresUI.total; i++) {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "DuringPushRecord %d : %s", i + 1, theatresUI.theatres[i]);
-    }
-    
     //now add action bar!!!
     theatresUI.actionBar = action_bar_layer_create();
     action_bar_layer_add_to_window(theatresUI.actionBar, theatresUI.window);
 
     //icons
-    theatresUI.upIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_UP);
-    theatresUI.downIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_DOWN);
+    theatresUI.upIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_UP_WHITE);
+    theatresUI.downIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_DOWN_WHITE);
 
     if (theatresUI.currentMode == THEATRE_UI_MODE_THEATRES) {
-        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE);
+        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE_BLACK);
     } else {
-        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME);
+        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME_BLACK);
     }
 
     action_bar_layer_set_icon(theatresUI.actionBar, BUTTON_ID_SELECT, theatresUI.selectIcon);
@@ -121,11 +112,10 @@ static void theatres_screen_load(Window *window) {
     //action_bar_layer_set_background_color(theatresUI.actionBar, GColorWhite);
 
     //then set current
-    //set_current_theatre(theatresUI.currentIndex);
+    set_current_theatre(theatresUI.currentIndex);
 }
 
 static void theatres_screen_unload() {
-    theatresUI.current = NULL;
     theatresUI.currentMovie = NULL;
     gbitmap_destroy(theatresUI.upIcon);
     gbitmap_destroy(theatresUI.downIcon);
@@ -136,19 +126,26 @@ static void theatres_screen_unload() {
     //text_layer_destroy(theatresUI.titleBar);
     action_bar_layer_destroy(theatresUI.actionBar);
 
+    //    if(currentTheatre.id){
+    //        free(currentTheatre.id);
+    //    }
+    //    
+    //    if(currentTheatre.name){
+    //        free(currentTheatre.name);
+    //    }
+    //    
+    //    if(currentTheatre.address){
+    //        free(currentTheatre.address);
+    //    }
+    //    
+    //    if(currentTheatre.distance){
+    //        free(currentTheatre.distance);
+    //    }
+
 }
 
 void theatres_screen_initialize(int total, enum TheatreUiMode mode, char *movieId) {
 
-    //    if (theatresUI.theatres) {
-    //        free(theatresUI.theatres);
-    //        theatresUI.theatres = NULL;
-    //    }
-
-    //theatresUI.theatres;
-    //    for (int i = 0; i < total; i++) {
-    //        APP_LOG(APP_LOG_LEVEL_DEBUG, "Record %d : %s", i + 1, theatresUI.theatres[i]);
-    //    }    
     theatresUI.total = total;
     theatresUI.currentMode = mode;
     if (theatresUI.currentMovie) {
@@ -158,6 +155,7 @@ void theatres_screen_initialize(int total, enum TheatreUiMode mode, char *movieI
     }
     //ui.currentMode = mode;
 
+    theatresUI.currentIndex = 0;
     theatresUI.window = window_create();
 
     window_set_window_handlers(theatresUI.window, (WindowHandlers) {
@@ -167,8 +165,6 @@ void theatres_screen_initialize(int total, enum TheatreUiMode mode, char *movieI
 
 
     const bool animated = true;
-    for (int i = 0; i < total; i++) {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "BeforePushRecord %d : %s", i + 1, theatresUI.theatres[i]);
-    }
     window_stack_push(theatresUI.window, animated);
 }
+
