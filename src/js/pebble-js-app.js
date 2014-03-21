@@ -158,7 +158,7 @@ var PBMovies = function(initDoneCallback) {
             service.getTheatres(function(theatres) {
                 if (theatres.length > 0) {
                     var theatre, records = [];
-                    for (var i = 0; i < 3/*theatres.length*/; i++) {
+                    for (var i = 0; i < theatres.length; i++) {
                         //"id,name,address,distance_m"
                         theatre = objectValues(theatres[i]);
                         theatre[3] = theatreUtils.formatDistance(theatre[3]);

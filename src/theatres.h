@@ -32,4 +32,4 @@ struct TheatreUI {
 struct TheatreUI theatresUI;
 //struct TheatreUI movieTheatresUI;
 
-void theatres_screen_initialize(char**, int, enum TheatreUiMode, char*);
+void theatres_screen_initialize(int, enum TheatreUiMode, char*);

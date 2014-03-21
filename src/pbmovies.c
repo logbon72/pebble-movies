@@ -14,6 +14,7 @@ static void close_wait(void *);
 char *messageBuffer;
 AppTimer *inboxWaitTimer;
 uint8_t currentWaiter = MSG_CODE_NO_WAIT;
+char **dataRecords;
 
 static void close_wait(void *context) {
     if (currentWaiter == MSG_CODE_NO_WAIT) {
@@ -61,16 +62,20 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
         currentWaiter = MSG_CODE_NO_WAIT;
         //char **dataRecords = str_split(messageBuffer, DELIMITER_RECORD);
         int length = 0;
-        char **dataRecords = str_split(messageBuffer, DELIMITER_RECORD, &length);
+        dataRecords = str_split(messageBuffer, DELIMITER_RECORD, &length);
         free(messageBuffer);
         messageBuffer = NULL;
-        
+
         APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", length);
+        //        for(int i=0; i < length;i++){
+        //            APP_LOG(APP_LOG_LEVEL_DEBUG, "Record %d : %s", i+1, dataRecords[i]);
+        //        }
         window_stack_pop(false);
         switch (msgCode) {
-            
+
             case PB_MSG_IN_THEATRES:
-                theatres_screen_initialize(dataRecords, length, THEATRE_UI_MODE_THEATRES, NULL);
+                theatresUI.theatres = dataRecords;
+                theatres_screen_initialize(length, THEATRE_UI_MODE_THEATRES, NULL);
                 break;
 
             default:
