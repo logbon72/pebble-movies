@@ -5,29 +5,6 @@ enum MovieUIMode {
     MovieUIModeTheatreMovies,
 };
 
-struct MovieUIScreen {
-    Window *window;
-    TextLayer *titleTxt;
-    Layer *titleUnderline;
-    TextLayer *runtimeTxt;
-    TextLayer *minTxt;
-    TextLayer *ratedTxt;
-    TextLayer *criticRatingLabelTxt;
-    TextLayer *percentLabelTxt;
-    TextLayer *criticRatingTxt;
-    TextLayer *userRatingTxt;
-    TextLayer *userRatingLabelTxt;
-    TextLayer *genreTxt;
-    ActionBarLayer *actionBar;
-
-    GBitmap *downIcon;
-    GBitmap *upIcon;
-    GBitmap *selectIcon;
-    uint8_t total;
-    uint8_t currentIndex;
-    char *currentTheatreId;
-    enum MovieUIMode currentMode;
-} moviesUI;
 
 #define MOVIE_FLD_LENGTH_ID 7
 #define MOVIE_FLD_LENGTH_TITLE 25

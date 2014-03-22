@@ -53,10 +53,6 @@ enum PbMsgOut {
 
 static const char *LOADING_TEXT = "Loading...";
 
-struct StatusOverlay {
-    TextLayer *statusText;
-    uint8_t isDisplayed;
-};
 
 void app_message_init(void);
 char** str_split(char*, const char, int*);
@@ -67,4 +63,3 @@ short int find_offset_of_nth_occurence(char*, char, char, int, short int);
 char *get_data_at(char* data, int row, int col, char*, int);
 int send_message_with_string(uint8_t, uint8_t, char *, uint8_t, char *);
 void load_showtimes_for_movie_theatre();
-void add_loading_overLay(Layer *, char*);

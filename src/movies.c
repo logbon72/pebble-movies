@@ -9,6 +9,31 @@ const char *labelCritics = "Critics";
 const char *labelUsers = "Users";
 const char *labelMin = "min";
 
+static struct MovieUIScreen {
+    Window *window;
+    TextLayer *titleTxt;
+    Layer *titleUnderline;
+    TextLayer *runtimeTxt;
+    TextLayer *minTxt;
+    TextLayer *ratedTxt;
+    TextLayer *criticRatingLabelTxt;
+    TextLayer *percentLabelTxt;
+    TextLayer *criticRatingTxt;
+    TextLayer *userRatingTxt;
+    TextLayer *userRatingLabelTxt;
+    TextLayer *genreTxt;
+    ActionBarLayer *actionBar;
+
+    GBitmap *downIcon;
+    GBitmap *upIcon;
+    GBitmap *selectIcon;
+    uint8_t total;
+    uint8_t currentIndex;
+    char *currentTheatreId;
+    enum MovieUIMode currentMode;
+} moviesUI;
+
+
 static void set_current(uint8_t movieIndex) {
     if (movieIndex >= moviesUI.total) {
         movieIndex = 0;

@@ -9,7 +9,7 @@
 #define MSG_CODE_NO_WAIT (uint8_t) 6000
 
 static void handle_start_app(void);
-static void handle_init_failed(const char *message);
+static void handle_init_failed(char *message);
 static void handle_data_received(uint8_t, uint8_t, uint8_t, char *);
 static void close_wait(void *);
 
@@ -195,16 +195,13 @@ void app_message_init() {
     //APP_LOG(APP_LOG_LEVEL_INFO, "Needed Inbox %lu, available: %lu", needed, app_message_inbox_size_maximum());
 }
 
-static void handle_init_failed(const char *message) {
-    text_layer_set_text(splashScreen.statusText, message);
-    splashScreen.loading = 0;
+static void handle_init_failed(char *message) {
+    splash_screen_set_loading(0);
+    splash_screen_set_status_text(message);
 }
 
 static void handle_start_app() {
-    splashScreen.loading = 0;
-    window_stack_remove(splashScreen.window, true);
-    //window_destroy(splashScreen.window);
-    //init home screen
+    splash_screen_hide();
     home_screen_init();
 }
 
@@ -372,8 +369,4 @@ void load_showtimes_for_movie_theatre() {
             preloader_init(LOADING_TEXT);
         }
     }
-}
-
-void add_loading_overLay(Layer *parentLayer, char* text) {
-
 }

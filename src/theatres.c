@@ -3,6 +3,26 @@
 #include "theatres.h"
 #include "preloader.h"
 
+struct TheatreUI {
+    Window *window;
+    ActionBarLayer *actionBar;
+    //TextLayer *titleBar;
+    TextLayer *address;
+    TextLayer *name;
+    TextLayer *distance;
+    enum TheatreUiMode currentMode;
+    //char **theatres;
+    uint16_t currentIndex;
+    uint16_t total;
+    //char **current;
+    char *currentMovie;
+    GBitmap *upIcon;
+    GBitmap *downIcon;
+    GBitmap *selectIcon;
+};
+
+static struct TheatreUI theatresUI;
+
 static void set_current_theatre(uint16_t theatreIndex) {
     if (theatreIndex >= theatresUI.total) {
         theatreIndex = 0;

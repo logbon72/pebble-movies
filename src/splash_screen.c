@@ -4,6 +4,16 @@
 
 //struct SplsplashScreen splashScreen;
 
+struct SplashScreen {
+    Window *window;
+    TextLayer *statusText;
+    GBitmap *img;
+    BitmapLayer *imgLayer;
+    uint8_t loading;
+} splashScreen;
+
+
+
 static void splash_screen_select_handler(ClickRecognizerRef recognizer, void *context);
 static void splash_click_config_provider(void *context);
 static void splash_screen_load(Window *window);
@@ -77,6 +87,7 @@ static void splash_send_init(void) {
 void splash_screen_init(void) {
     splashScreen.window = window_create();
     window_set_click_config_provider(splashScreen.window, splash_click_config_provider);
+
     window_set_window_handlers(splashScreen.window, (WindowHandlers) {
         .load = splash_screen_load,
         .unload = splash_screen_unload,
@@ -84,4 +95,17 @@ void splash_screen_init(void) {
     const bool animated = true;
 
     window_stack_push(splashScreen.window, animated);
+}
+
+void splash_screen_set_status_text(char *text) {
+    text_layer_set_text(splashScreen.statusText, text);
+}
+
+void splash_screen_hide() {
+    splashScreen.loading = 0;
+    window_stack_remove(splashScreen.window, true);
+}
+
+void splash_screen_set_loading(uint8_t loading){
+    splashScreen.loading = loading;
 }
