@@ -13,7 +13,7 @@ static void splash_send_init(void);
 
 static void splash_screen_select_handler(ClickRecognizerRef recognizer, void *context) {
     if (!splashScreen.loading) {
-        text_layer_set_text(splashScreen.statusText, "Loading...");
+        text_layer_set_text(splashScreen.statusText, LOADING_TEXT);
         //Tuplet * messages[] = {TupletInteger(APP_KEY_MSG_CODE, PB_MSG_OUT_INIT)};
         splash_send_init();
         splashScreen.loading = 1;
@@ -35,7 +35,7 @@ static void splash_screen_load(Window *window) {
         { 0, 110}, .size =
         { bounds.size.w, 40}
     });
-    text_layer_set_text(splashScreen.statusText, "Loading...");
+    text_layer_set_text(splashScreen.statusText, LOADING_TEXT);
     //text_layer_set_font(splashScreen.statusText, fonts_get_system_font(FONT_KEY_BITHAM_18_LIGHT_SUBSET));
     text_layer_set_background_color(splashScreen.statusText, GColorClear);
     text_layer_set_text_color(splashScreen.statusText, GColorWhite);

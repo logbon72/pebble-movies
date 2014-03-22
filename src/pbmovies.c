@@ -5,6 +5,7 @@
 #include "theatres.h"
 #include "preloader.h"
 #include "movies.h"
+#include "showtimes.h"
 #define MSG_CODE_NO_WAIT (uint8_t) 6000
 
 static void handle_start_app(void);
@@ -96,12 +97,8 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
 
 
         reset_mssage_receiver();
-        preloader.isOn = 0;
-        //        if(preloader.window == window_stack_get_top_window()){
-        //           window_stack_pop(true) ;
-        //        }
-        text_layer_set_text(preloader.statusText, "Press back again");
-
+        //preloader_set_is_on(0);
+        preloader_stop();
         switch (msgCode) {
 
             case PB_MSG_IN_THEATRES:
@@ -123,6 +120,10 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
             case PB_MSG_IN_THEATRE_MOVIES:
                 //APP_LOG(APP_LOG_LEVEL_INFO, "TheatreMovie Records: (Length=%d) ", strlen(MOVIES_LIST));
                 movies_screen_init(record_count(MOVIES_LIST, DELIMITER_RECORD), MovieUIModeTheatreMovies, currentTheatre.id);
+                break;
+
+            case PB_MSG_IN_SHOWTIMES:
+                showtimes_init();
                 break;
 
             default:
@@ -165,11 +166,8 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 
         case PB_MSG_IN_CONNECTION_ERROR:
         case PB_MSG_IN_NO_DATA:
-            preloader.isOn = 0;
-            if (preloader.statusText) {
-                text_layer_set_text(preloader.statusText, message->value->cstring);
-                //@todo stop animation
-            }
+            preloader_set_is_on(0);
+            preloader_set_status(message->value->cstring);
             break;
         default:
             APP_LOG(APP_LOG_LEVEL_INFO, "Unknown message code %d", msgType);
@@ -204,8 +202,8 @@ static void handle_init_failed(const char *message) {
 
 static void handle_start_app() {
     splashScreen.loading = 0;
-    window_stack_pop(false);
-    window_destroy(splashScreen.window);
+    window_stack_remove(splashScreen.window, true);
+    //window_destroy(splashScreen.window);
     //init home screen
     home_screen_init();
 }
@@ -371,7 +369,11 @@ void load_showtimes_for_movie_theatre() {
         int result = send_message_with_string(PB_MSG_OUT_GET_SHOWTIMES, APP_KEY_THEATRE_ID, currentTheatre.id
                 , APP_KEY_MOVIE_ID, currentMovie.id);
         if (result) {
-            preloader_init("Loading...");
+            preloader_init(LOADING_TEXT);
         }
     }
+}
+
+void add_loading_overLay(Layer *parentLayer, char* text) {
+
 }

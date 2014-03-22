@@ -51,9 +51,13 @@ enum PbMsgOut {
 #define DELIMITER_RECORD '\t'
 #define MSG_INTERVAL_WAIT_MS 10000
 
-char THEATRES_LIST[3072];
-char MOVIES_LIST[3072];
-char SHOWTIMES_LIST[1024];
+static const char *LOADING_TEXT = "Loading...";
+
+struct StatusOverlay {
+    TextLayer *statusText;
+    uint8_t isDisplayed;
+};
+
 void app_message_init(void);
 char** str_split(char*, const char, int*);
 char *strdup(const char *);
@@ -63,3 +67,4 @@ short int find_offset_of_nth_occurence(char*, char, char, int, short int);
 char *get_data_at(char* data, int row, int col, char*, int);
 int send_message_with_string(uint8_t, uint8_t, char *, uint8_t, char *);
 void load_showtimes_for_movie_theatre();
+void add_loading_overLay(Layer *, char*);

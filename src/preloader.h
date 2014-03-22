@@ -6,11 +6,9 @@
  * Created on March 19, 2014, 6:48 PM
  */
 
-struct PreloaderScreen {
-    Window *window;
-    TextLayer *statusText;
-    uint8_t isOn;
-    AppTimer *timer;
-} preloader;
+void preloader_init(const char* );
 
-void preloader_init(char* text);
+void preloader_set_status(char *);
+void preloader_set_is_on(uint8_t);
+void preloader_stop();
+void preloader_set_hidden(Window *window);

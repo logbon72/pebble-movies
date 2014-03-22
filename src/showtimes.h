@@ -1,23 +1,35 @@
-/* 
- * File:   showtimes.h
- * Author: intelworx
- *
- * Created on March 22, 2014, 5:27 AM
- */
+#pragma once
 
-#ifndef SHOWTIMES_H
-#define	SHOWTIMES_H
+#define MAX_SHOWTIMES_COUNT 25
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+#define SHOWTIME_FLD_LENGTH_ID 9 
+#define SHOWTIME_FLD_LENGTH_TYPE 2
+#define SHOWTIME_FLD_LENGTH_TIME 8
+#define SHOWTIME_FLD_LENGTH_LINK 2
 
+#define SHOWTIME_FLD_IDX_ID 0
+#define SHOWTIME_FLD_IDX_TYPE 1
+#define SHOWTIME_FLD_IDX_TIME 2
+#define SHOWTIME_FLD_IDX_LINK 3
 
+struct Showtime {
+    char id[SHOWTIME_FLD_LENGTH_ID];
+    char type[SHOWTIME_FLD_LENGTH_TYPE];
+    char time[SHOWTIME_FLD_LENGTH_TIME];
+    char link[SHOWTIME_FLD_LENGTH_LINK];
+};
 
+struct Showtime showtimes[MAX_SHOWTIMES_COUNT];
 
-#ifdef	__cplusplus
-}
-#endif
+struct ShowtimesUIScreen {
+    Window* window;
+    MenuLayer *menuLayer;
+    GBitmap *canBuyIcon;
+    GBitmap *cantBuyIcon;
+    uint8_t total;
+    
+} showtimesUI;
 
-#endif	/* SHOWTIMES_H */
+char SHOWTIMES_LIST[1024];
 
+void showtimes_init();

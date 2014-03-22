@@ -56,5 +56,6 @@ struct MovieRecord {
     char rated[MOVIE_FLD_LENGTH_RATED];
 } currentMovie;
 
+char MOVIES_LIST[3072];
 
 void movies_screen_init(int, enum MovieUIMode, char*);

@@ -43,9 +43,9 @@ static void home_screen_select_handler(MenuLayer *menu_layer, MenuIndex *cell_in
     dict_write_end(iter);
     app_message_outbox_send();
     if (cell_index->row == 0) {
-        preloader_init("Movies Loading...");
+        preloader_init(LOADING_TEXT);
     } else {
-        preloader_init("Theatres Loading...");
+        preloader_init(LOADING_TEXT);
     }
 }
 

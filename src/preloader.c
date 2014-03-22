@@ -9,8 +9,15 @@
 #define STATUS_TEXT_LENGTH 32
 static Layer *square_layer;
 static GBitmap *statusBarIcon;
-char *STATUS_TEXT;
+static const char *STATUS_TEXT;
+//static const char *PRESS_BACK ="Press Back Again";
 
+static struct PreloaderScreen {
+    Window *window;
+    TextLayer *statusText;
+    uint8_t isOn;
+    AppTimer *timer;
+} preloader;
 // Timers can be canceled with `app_timer_cancel()`
 //static AppTimer *timer;
 
@@ -46,12 +53,22 @@ static void unload(Window *w) {
     app_timer_cancel(preloader.timer);
     text_layer_destroy(preloader.statusText);
     gbitmap_destroy(statusBarIcon);
-    preloader.isOn = 0;
+    preloader.isOn = 1;
 }
+
+//static void pop_preloader(void *c) {
+//    //window_stack_pop(true);
+//}
 
 static void preloader_appear(Window *window) {
     const uint32_t timeout_ms = ANIMATION_TIMEOUT;
-    preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
+    if(preloader.isOn){
+        preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
+    }
+//    else{
+//        preloader.timer = app_timer_register(timeout_ms, pop_preloader, NULL);
+//    }
+    
 }
 
 static void preloader_load(Window *window) {
@@ -79,7 +96,7 @@ static void preloader_load(Window *window) {
     layer_add_child(window_layer, text_layer_get_layer(preloader.statusText));
 }
 
-void preloader_init(char *text) {
+void preloader_init(const char *text) {
     preloader.window = window_create();
     STATUS_TEXT = text;
 
@@ -95,4 +112,22 @@ void preloader_init(char *text) {
     window_stack_push(preloader.window, animated);
 }
 
+void preloader_set_status(char *text) {
+    text_layer_set_text(preloader.statusText, text);
+}
 
+void preloader_set_is_on(uint8_t isOn) {
+    preloader.isOn = isOn;
+}
+
+void preloader_stop() {
+    preloader.isOn = 0;
+    //if(preloader.window == window_stack_get_top_window()){
+    //window_stack_pop(true);
+    // }
+}
+
+void preloader_set_hidden(Window* window){
+    preloader_set_is_on(0);
+    window_stack_remove(preloader.window, true);
+}

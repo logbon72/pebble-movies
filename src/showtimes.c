@@ -1,1 +1,122 @@
+#include <pebble.h>
+#include "pbmovies.h"
+#include "showtimes.h"
+#include "preloader.h"
 
+static const char* typeDigital = "Digital";
+static const char* typeDigital3D = "3D";
+static const char* typeIMAX = "IMAX 3D";
+static const char* sectionHeader = "Available Showtimes";
+
+#define SHOWTIME_TYPE_DIGITAL '0'
+#define SHOWTIME_TYPE_3D '1'
+#define SHOWTIME_TYPE_IMAX '2'
+
+#define SHOWTIME_CAN_BUY '1'
+#define SHOWTIME_CANT_BUY '0'
+
+static uint16_t menu_num_sections(MenuLayer *menu_layer, void *data) {
+    return 1;
+}
+
+static uint16_t menu_num_rows(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+    return showtimesUI.total;
+}
+
+static int16_t menu_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+    // This is a define provided in pebble.h that you may use for the default height
+    return MENU_CELL_BASIC_HEADER_HEIGHT;
+}
+
+static void menu_draw_header(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
+    // Determine which section we're working with
+    menu_cell_basic_header_draw(ctx, cell_layer, sectionHeader);
+}
+
+static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *ci, void *data) {
+    const char *showtimeType;
+    if (showtimes[ci->row].type[0] == SHOWTIME_TYPE_3D) {
+        showtimeType = typeDigital3D;
+    } else if (showtimes[ci->row].type[0] == SHOWTIME_TYPE_IMAX) {
+        showtimeType = typeIMAX;
+    } else {
+        showtimeType = typeDigital;
+    }
+
+    GBitmap *icon = showtimes[ci->row].link[0] == SHOWTIME_CAN_BUY ? showtimesUI.canBuyIcon :
+            showtimesUI.cantBuyIcon;
+
+
+    menu_cell_basic_draw(ctx, cell_layer, showtimes[ci->row].time, showtimeType, icon);
+}
+
+static void menu_select_handler(MenuLayer *menu_layer, MenuIndex *ci, void *data) {
+    // Use the row to specify which item will receive the select action
+    if (showtimes[ci->row].link[0] == SHOWTIME_CAN_BUY) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Can Buy ");
+    } else {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Can't Buy ");
+    }
+}
+
+static void showtimes_load(Window *window) {
+    Layer *windowLayer = window_get_root_layer(window);
+    GRect bounds = layer_get_bounds(windowLayer);
+    //window_set_background_color(window, GColorBlack);
+
+    showtimesUI.menuLayer = menu_layer_create(bounds);
+
+    menu_layer_set_callbacks(showtimesUI.menuLayer, NULL, (MenuLayerCallbacks) {
+        .get_num_sections = menu_num_sections,
+        .get_num_rows = menu_num_rows,
+        .get_header_height = menu_header_height_callback,
+        .draw_header = menu_draw_header,
+        .draw_row = menu_cell_drawer,
+        .select_click = menu_select_handler,
+    });
+
+    // Bind the menu layer's click config provider to the window for interactivity
+    menu_layer_set_click_config_onto_window(showtimesUI.menuLayer, window);
+
+    // Add it to the window for display
+    layer_add_child(windowLayer, menu_layer_get_layer(showtimesUI.menuLayer));
+}
+
+static void showtimes_unload(Window *window) {
+    menu_layer_destroy(showtimesUI.menuLayer);
+    gbitmap_destroy(showtimesUI.canBuyIcon);
+    gbitmap_destroy(showtimesUI.cantBuyIcon);
+    showtimesUI.total = 0;
+}
+
+void showtimes_init() {
+
+    showtimesUI.window = window_create();
+
+    showtimesUI.total = record_count(SHOWTIMES_LIST, DELIMITER_RECORD);
+    if (showtimesUI.total > MAX_SHOWTIMES_COUNT) {
+        showtimesUI.total = MAX_SHOWTIMES_COUNT;
+    }
+
+    for (uint8_t i = 0; i < showtimesUI.total; i++) {
+        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_ID, showtimes[i].id, SHOWTIME_FLD_LENGTH_ID);
+        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_LINK, showtimes[i].link, SHOWTIME_FLD_LENGTH_LINK);
+        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_TIME, showtimes[i].time, SHOWTIME_FLD_LENGTH_TIME);
+        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_TYPE, showtimes[i].type, SHOWTIME_FLD_LENGTH_TYPE);
+    }
+
+
+    showtimesUI.canBuyIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_CAN_BUY);
+    showtimesUI.cantBuyIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_CANT_BUY);
+
+    window_set_window_handlers(showtimesUI.window, (WindowHandlers) {
+        .load = showtimes_load,
+        .unload = showtimes_unload,
+        .appear = preloader_set_hidden,
+    });
+
+
+
+    window_stack_push(showtimesUI.window, true);
+
+}

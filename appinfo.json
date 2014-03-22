@@ -76,6 +76,16 @@
                 "name": "ICON_A_BAR_DOWN",
                 "file": "icons/icon_down.png"
             }
+            , {
+                "type": "png",
+                "name": "ICON_CAN_BUY",
+                "file": "icons/icon_can_buy.png"
+            }
+            , {
+                "type": "png",
+                "name": "ICON_CANT_BUY",
+                "file": "icons/icon_cant_buy.png"
+            }
         ]
     }
 

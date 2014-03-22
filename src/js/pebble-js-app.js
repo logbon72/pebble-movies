@@ -263,17 +263,17 @@ var PBMovies = function(initDoneCallback) {
             for (var i = 0; i < showtimes.length; i++) {
                 var showtime = [];
                 var hasUrl = showtimes[i].url && showtimes[i].url.length ? 1 : 0;
-                var time = showtimeUtils.formatTime(showtimes[i].show_date, showtimes[i].show_time) + " [" + (hasUrl ? "x" : " ") + "]";
+                var time = showtimeUtils.formatTime(showtimes[i].show_date, showtimes[i].show_time);
                 showtime.push(showtimes[i].id);
                 showtime.push(showtimeTypeMask[showtimes[i].type]);
                 showtime.push(time);
                 showtime.push(hasUrl);
-
+//14579
                 records.push(showtime.join(DELIMETER_FIELD));
             }
             //bug 
             if (records.length) {
-                console.log("Found records length: "+records.length);
+                console.log("Showtimes: "+JSON.stringify(records));
                 messageHandler.sendData(pebbleMessagesIn.showtimes, records.join(DELIMETER_RECORD));
             } else {
                 messageHandler.sendNoData("No showtimes");

@@ -1,5 +1,4 @@
 #pragma once
-#include "pebble.h"
 
 struct HomeScreen {
     Window *window;

@@ -41,7 +41,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         if (theatresUI.currentMode == TheatreUIModeTheatres) {
             //APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get theatre movies for theatre ID: %s", );
             if (send_message_with_string(PB_MSG_OUT_GET_THEATRE_MOVIES, APP_KEY_THEATRE_ID, currentTheatre.id, 0, NULL)) {
-                preloader_init("Getting Theatre Movies");
+                preloader_init(LOADING_TEXT);
             }
         } else {
             load_showtimes_for_movie_theatre();
@@ -120,7 +120,6 @@ static void theatres_screen_unload() {
     text_layer_destroy(theatresUI.name);
     //text_layer_destroy(theatresUI.titleBar);
     action_bar_layer_destroy(theatresUI.actionBar);
-    //APP_LOG(APP_LOG_LEVEL_DEBUG, "Unloading...tw");
 }
 
 //static void theatre_screen_appear(Window* window) {
@@ -144,7 +143,7 @@ void theatres_screen_initialize(int total, enum TheatreUiMode mode, char *movieI
     window_set_window_handlers(theatresUI.window, (WindowHandlers) {
         .load = theatres_screen_load,
         .unload = theatres_screen_unload,
-        //.appear = theatre_screen_appear
+        .appear = preloader_set_hidden,
     });
 
 
