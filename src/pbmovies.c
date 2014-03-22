@@ -51,6 +51,8 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
     if (page != lastPage + 1) {
         APP_LOG(APP_LOG_LEVEL_WARNING, "Message broken");
         lastPage = 0;
+        messageBuffer = NULL;
+        preloader_set_timed_out();
         return;
     }
 
@@ -366,7 +368,7 @@ void load_showtimes_for_movie_theatre() {
         int result = send_message_with_string(PB_MSG_OUT_GET_SHOWTIMES, APP_KEY_THEATRE_ID, currentTheatre.id
                 , APP_KEY_MOVIE_ID, currentMovie.id);
         if (result) {
-            preloader_init(LOADING_TEXT);
+            preloader_init();
         }
     }
 }

@@ -20,6 +20,7 @@ static void splash_screen_load(Window *window);
 static void splash_screen_select_handler(ClickRecognizerRef, void*);
 static void splash_screen_unload(Window *window);
 static void splash_send_init(void);
+static const char *LOADING_TEXT = "Loading...";
 
 static void splash_screen_select_handler(ClickRecognizerRef recognizer, void *context) {
     if (!splashScreen.loading) {

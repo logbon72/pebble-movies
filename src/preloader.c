@@ -6,11 +6,13 @@
 #define RADIUS_INC 3
 #define RADIUS_INITIAL 3
 #define ANIMATION_TIMEOUT 100
-#define STATUS_TEXT_LENGTH 32
+
 static Layer *square_layer;
 static GBitmap *statusBarIcon;
-static const char *STATUS_TEXT;
+//static const char *STATUS_TEXT;
 //static const char *PRESS_BACK ="Press Back Again";
+static char *LOADING_TEXT = "Loading...";
+static char *TIME_OUT = "Connection Timed Out!";
 
 static struct PreloaderScreen {
     Window *window;
@@ -86,7 +88,7 @@ static void preloader_load(Window *window) {
     layer_add_child(window_layer, square_layer);
 
     preloader.statusText = text_layer_create(GRect(0, 80, bounds.size.w, bounds.size.h - 110));
-    text_layer_set_text(preloader.statusText, STATUS_TEXT);
+    
     text_layer_set_background_color(preloader.statusText, GColorClear);
     text_layer_set_text_color(preloader.statusText, GColorWhite);
     text_layer_set_text_alignment(preloader.statusText, GTextAlignmentCenter);
@@ -94,11 +96,12 @@ static void preloader_load(Window *window) {
     text_layer_set_overflow_mode(preloader.statusText, GTextOverflowModeWordWrap);
 
     layer_add_child(window_layer, text_layer_get_layer(preloader.statusText));
+    preloader_set_loading();
 }
 
-void preloader_init(const char *text) {
+void preloader_init() {
     preloader.window = window_create();
-    STATUS_TEXT = text;
+    //STATUS_TEXT = text;
 
     window_set_window_handlers(preloader.window, (WindowHandlers) {
         .unload = unload,
@@ -116,6 +119,14 @@ void preloader_set_status(char *text) {
     text_layer_set_text(preloader.statusText, text);
 }
 
+void preloader_set_loading() {
+    preloader_set_status(LOADING_TEXT);
+}
+
+void preloader_set_timed_out() {
+    preloader_set_status(TIME_OUT);
+}
+
 void preloader_set_is_on(uint8_t isOn) {
     preloader.isOn = isOn;
 }
@@ -131,3 +142,4 @@ void preloader_set_hidden(Window* window){
     preloader_set_is_on(0);
     window_stack_remove(preloader.window, true);
 }
+

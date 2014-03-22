@@ -79,7 +79,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         if (moviesUI.currentMode == MovieUIModeMovies) {
             //APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get movie theatres for movie ID: %s", currentMovie.id);
             if (send_message_with_string(PB_MSG_OUT_GET_MOVIE_THEATRES, APP_KEY_MOVIE_ID, currentMovie.id, 0, NULL)) {
-                preloader_init(LOADING_TEXT);
+                preloader_init();
             }
         } else {
             //APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get showtimes for Movie ID: %s and TheatreID: %s", currentMovie.id, moviesUI.currentTheatreId);

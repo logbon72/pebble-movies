@@ -54,11 +54,7 @@ static void home_screen_select_handler(MenuLayer *menu_layer, MenuIndex *cell_in
     dict_write_tuplet(iter, &msgCode);
     dict_write_end(iter);
     app_message_outbox_send();
-    if (cell_index->row == 0) {
-        preloader_init(LOADING_TEXT);
-    } else {
-        preloader_init(LOADING_TEXT);
-    }
+    preloader_init();
 }
 
 // This is the menu item draw callback where you specify what each item should look like

@@ -51,8 +51,6 @@ enum PbMsgOut {
 #define DELIMITER_RECORD '\t'
 #define MSG_INTERVAL_WAIT_MS 10000
 
-static const char *LOADING_TEXT = "Loading...";
-
 
 void app_message_init(void);
 char** str_split(char*, const char, int*);
