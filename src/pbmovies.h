@@ -13,6 +13,9 @@ enum APP_KEYS {
     APP_KEY_DATA = 0x2, // TUPLE_CSTRING
     APP_KEY_PAGE = 0x4, // TUPLE_CSTRING
     APP_KEY_TOTAL_PAGES = 0x8, // TUPLE_CSTRING
+    APP_KEY_MOVIE_ID = 16, // TUPLE_CSTRING
+    APP_KEY_THEATRE_ID = 32, // TUPLE_CSTRING
+    APP_KEY_SHOWTIME_ID = 64, // TUPLE_CSTRING
     //APP_KEY_CITY_KEY = 0x2,         // TUPLE_CSTRING
 };
 
@@ -54,7 +57,9 @@ char SHOWTIMES_LIST[1024];
 void app_message_init(void);
 char** str_split(char*, const char, int*);
 char *strdup(const char *);
-short int record_count(char* string, const char delimeter);
-char *str_dup_range(char* input, int offset, int len, char *dest);
-short int find_offset_of_nth_occurence(char* inString, char forChar, char terminator, int n, short int startFrom);
+short int record_count(char*, const char);
+char *str_dup_range(char*, int, int, char *);
+short int find_offset_of_nth_occurence(char*, char, char, int, short int);
 char *get_data_at(char* data, int row, int col, char*, int);
+int send_message_with_string(uint8_t, uint8_t, char *, uint8_t, char *);
+void load_showtimes_for_movie_theatre();

@@ -40,14 +40,16 @@ static void reset_mssage_receiver() {
 
 static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPages, char *data) {
 
-    APP_LOG(APP_LOG_LEVEL_INFO, "Received data Length: %d, Page %d of %d", strlen(data), page, totalPages);
+    //APP_LOG(APP_LOG_LEVEL_INFO, "Received data Length: %d, Page %d of %d", strlen(data), page, totalPages);
     if (page != 1 && page != totalPages && !(currentWaiter || currentWaiter != msgCode)) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Message discarded, wait is over already");
+        APP_LOG(APP_LOG_LEVEL_INFO, "Message discarded");
+        //reset_mssage_receiver();
         return;
     }
 
     if (page != lastPage + 1) {
         APP_LOG(APP_LOG_LEVEL_WARNING, "Message broken");
+        lastPage = 0;
         return;
     }
 
@@ -71,7 +73,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
                 messageBuffer = SHOWTIMES_LIST;
                 break;
             default:
-                APP_LOG(APP_LOG_LEVEL_DEBUG, "Message Code %d has no Buffer", msgCode);
+                //APP_LOG(APP_LOG_LEVEL_DEBUG, "Message Code %d has no Buffer", msgCode);
                 return;
         }
     }
@@ -84,26 +86,43 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
 
 
     if (inboxWaitTimer) {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "Canceling timer");
+        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Canceling timer");
         app_timer_cancel(inboxWaitTimer);
         inboxWaitTimer = NULL;
     }
 
     if (page == totalPages) {
         *messageBuffer = '\0';
-        window_stack_pop(false);
+
+
         reset_mssage_receiver();
+        preloader.isOn = 0;
+        //        if(preloader.window == window_stack_get_top_window()){
+        //           window_stack_pop(true) ;
+        //        }
+        text_layer_set_text(preloader.statusText, "Press back again");
+
         switch (msgCode) {
 
             case PB_MSG_IN_THEATRES:
-                APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", strlen(THEATRES_LIST));
+                //APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", strlen(THEATRES_LIST));
                 theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeTheatres, NULL);
                 break;
-                
+
+            case PB_MSG_IN_MOVIE_THEATRES:
+                //APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", strlen(THEATRES_LIST));
+                theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeMovieThetares, currentMovie.id);
+                break;
+
             case PB_MSG_IN_MOVIES:
-                APP_LOG(APP_LOG_LEVEL_INFO, "Movie Records: (Length=%d) ", strlen(MOVIES_LIST));
+                //APP_LOG(APP_LOG_LEVEL_INFO, "Movie Records: (Length=%d) ", strlen(MOVIES_LIST));
                 //theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeTheatres, NULL);
                 movies_screen_init(record_count(MOVIES_LIST, DELIMITER_RECORD), MovieUIModeMovies, NULL);
+                break;
+
+            case PB_MSG_IN_THEATRE_MOVIES:
+                //APP_LOG(APP_LOG_LEVEL_INFO, "TheatreMovie Records: (Length=%d) ", strlen(MOVIES_LIST));
+                movies_screen_init(record_count(MOVIES_LIST, DELIMITER_RECORD), MovieUIModeTheatreMovies, currentTheatre.id);
                 break;
 
             default:
@@ -112,7 +131,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
     } else {
         //some more messages expected, wait
         currentWaiter = msgCode;
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting timer...");
+        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting timer...");
         inboxWaitTimer = app_timer_register(MSG_INTERVAL_WAIT_MS, close_wait, NULL);
     }
 
@@ -153,7 +172,7 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
             }
             break;
         default:
-            APP_LOG(APP_LOG_LEVEL_INFO, "Unknown message code received %d", msgType);
+            APP_LOG(APP_LOG_LEVEL_INFO, "Unknown message code %d", msgType);
 
     }
 }
@@ -163,7 +182,7 @@ static void in_dropped_handler(AppMessageResult reason, void *context) {
 }
 
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Failed to Send! Reason : %d ", reason);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "AppMessageSendFailed! Reason : %d ", reason);
 }
 
 void app_message_init() {
@@ -177,27 +196,6 @@ void app_message_init() {
     //uint32_t needed= dict_calc_buffer_size(3, sizeof (uint8_t), sizeof (uint8_t), 500 * sizeof (char*));
     //APP_LOG(APP_LOG_LEVEL_INFO, "Needed Inbox %lu, available: %lu", needed, app_message_inbox_size_maximum());
 }
-//'const struct Tuplet * const' but argument is of type 'struct Tuple *'
-
-
-
-//static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-//    text_layer_set_text(splashScreen.statusText, "Select");
-//}
-//
-//static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-//    text_layer_set_text(splashScreen.statusText, "Up");
-//}
-//
-//static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-//    text_layer_set_text(splashScreen.statusText, "Down");
-//}
-//
-//static void click_config_provider(void *context) {
-//    window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
-//    window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
-//    window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
-//}
 
 static void handle_init_failed(const char *message) {
     text_layer_set_text(splashScreen.statusText, message);
@@ -342,4 +340,38 @@ char *get_data_at(char* data, int row, int col, char dest[], int maxLength) {
     char *toReturn = str_dup_range(data, colStartOffset + 1, lenTmp, dest);
     toReturn[lenTmp] = '\0';
     return toReturn;
+}
+
+int send_message_with_string(uint8_t msgCode, uint8_t stringKey1, char *string1,
+        uint8_t stringKey2, char *string2) {
+
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+    if (iter == NULL) {
+        return 0;
+    }
+
+    Tuplet msgTuplet = TupletInteger(APP_KEY_MSG_CODE, msgCode);
+    dict_write_tuplet(iter, &msgTuplet);
+    Tuplet strData = TupletCString(stringKey1, string1);
+    dict_write_tuplet(iter, &strData);
+
+    if (string2) {
+        Tuplet strData2 = TupletCString(stringKey2, string2);
+        dict_write_tuplet(iter, &strData2);
+    }
+
+    dict_write_end(iter);
+    app_message_outbox_send();
+    return 1;
+}
+
+void load_showtimes_for_movie_theatre() {
+    if (currentMovie.id && currentTheatre.id) {
+        int result = send_message_with_string(PB_MSG_OUT_GET_SHOWTIMES, APP_KEY_THEATRE_ID, currentTheatre.id
+                , APP_KEY_MOVIE_ID, currentMovie.id);
+        if (result) {
+            preloader_init("Loading...");
+        }
+    }
 }

@@ -24,6 +24,12 @@ var DISTANCE_UNIT_MILES = "mi";
 var DISTANCE_MILE_IN_M = 0.000621371;
 var DISTANCE_KM_IN_M = 0.001;
 
+var showtimeTypeMask = {
+    'digital': 0,
+    'digital 3D': 1,
+    'IMAX': 2
+};
+
 var pebbleMessagesIn = {
     initFailed: 0
     , startApp: 1
@@ -54,6 +60,7 @@ var PBMovies = function(initDoneCallback) {
     var locationOptions = {"timeout": LOCATION_TIMEOUT, "maximumAge": LOCATION_EXPIRY};
     var currentDate = dateYmd();
     var PostMethods = ["register"];
+    var lastPbMsgIn;
     //called on successful location detection
     var locationSuccess = function(pos) {
         var coordinates = pos.coords;
@@ -138,38 +145,54 @@ var PBMovies = function(initDoneCallback) {
         getMovies: function() {
             service.getMovies(function(movies) {
                 if (movies.length > 0) {
-                    var movie, records = [];
-                    for (var i = 0; i < movies.length; i++) {
-                        //id,title,genre,user_rating,rated,critic_rating,runtime                    
-                        movie = objectValues(movies[i]);
-                        movie[2] = movie[2] || " "; 
-                        movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
-                        movie[4] = (!movie[4] || !movie[4].trim().length) ? "NR" : movie[4];
-                        movie[4] = movie[4].replace(/Not Rated/i, "NR");
-                        movie[5] = Math.min(Math.round(parseFloat(movie[5])*100),99);
-                        records.push(movie.join(DELIMETER_FIELD));
-                    }
-                    messageHandler.sendData(pebbleMessagesIn.movies, records.join(DELIMETER_RECORD));
+                    messageHandler.sendData(pebbleMessagesIn.movies, movieUtils.convertToData(movies));
                 } else {
                     messageHandler.sendNoData("No movies at the moment");
+                }
+            }, messageHandler.handleErrors);
+        },
+        getMovieTheatres: function(dataIn) {
+            var movieId = dataIn.movieId;
+            service.getMovieTheatres(movieId, function(theatres) {
+                if (theatres.length > 0) {
+                    messageHandler.sendData(pebbleMessagesIn.movieTheatres, theatreUtils.convertToData(theatres));
+                } else {
+                    messageHandler.sendNoData("No theatres near you");
                 }
             }, messageHandler.handleErrors);
         },
         getTheatres: function() {
             service.getTheatres(function(theatres) {
                 if (theatres.length > 0) {
-                    var theatre, records = [];
-                    for (var i = 0; i < theatres.length; i++) {
-                        //"id,name,address,distance_m"
-                        theatre = objectValues(theatres[i]);
-                        theatre[3] = theatreUtils.formatDistance(theatre[3]);
-                        records.push(theatre.join(DELIMETER_FIELD));
-                    }
-                    messageHandler.sendData(pebbleMessagesIn.theatres, records.join(DELIMETER_RECORD));
+                    messageHandler.sendData(pebbleMessagesIn.theatres, theatreUtils.convertToData(theatres));
                 } else {
                     messageHandler.sendNoData("No theatres near you");
                 }
             }, messageHandler.handleErrors);
+        },
+        getTheatreMovies: function(dataIn) {
+            var theatreId = dataIn.theatreId;
+            service.getTheatreMovies(theatreId, function(movies) {
+                if (movies.length > 0) {
+                    messageHandler.sendData(pebbleMessagesIn.theatreMovies, movieUtils.convertToData(movies));
+                } else {
+                    messageHandler.sendNoData("No movies at the moment");
+                }
+            }, messageHandler.handleErrors);
+        },
+        getShowtimes: function(dataIn) {
+            var theatreId = dataIn.theatreId;
+            var movieId = dataIn.movieId;
+            if (lastPbMsgIn === pebbleMessagesIn.theatreMovies) {
+                //get theatre movies
+                service.getTheatreMovies(theatreId, function(movies) {
+                    showtimeUtils.processFromList(movies, movieId);
+                }, messageHandler.handleErrors);
+            } else {
+                service.getMovieTheatres(movieId, function(theatres) {
+                    showtimeUtils.processFromList(theatres, theatreId);
+                }, messageHandler.handleErrors);
+            }
         },
         handleErrors: function(err) {
             console.log("Errors occured while getting data :" + JSON.stringify(err));
@@ -178,12 +201,21 @@ var PBMovies = function(initDoneCallback) {
                 "message": "Connection Error"
             });
         },
+        truncateDate: function(data) {
+            var maxDataLength = MAX_DATA_LENGTH * MAX_PAGES;
+            if (data.length > maxDataLength) {
+                var tmp = data.substring(0, maxDataLength);
+                data = tmp.substring(0, tmp.lastIndexOf(DELIMETER_RECORD));
+            }
+            return data;
+        },
         sendData: function(msgCode, data, currentPage) {
-            
-            if(data.match(/[^\x00-\x7F]/g)){
+            lastPbMsgIn = msgCode;
+            if (data.match(/[^\x00-\x7F]/g)) {
                 data = data.replace(/[^\x00-\x7F]/g, "*");
             }
-            
+
+            data = messageHandler.truncateDate(data);
             if (!currentPage)
                 currentPage = 1;
 
@@ -197,8 +229,8 @@ var PBMovies = function(initDoneCallback) {
                 , "totalPages": totalPages
             };
             console.log("Sending page " + currentPage + " of " + totalPages + " Length = " + outData.data.length);
-            
-            //console.log("Out data"+JSON.stringify(outData));
+
+            //console.log("Out data" + JSON.stringify(outData));
             Pebble.sendAppMessage(outData);
             if (currentPage < totalPages && currentPage < MAX_PAGES) {
                 setTimeout(function() {
@@ -214,6 +246,50 @@ var PBMovies = function(initDoneCallback) {
         }
     };
 
+
+    var showtimeUtils = {
+        processFromList: function(list, idToSearch) {
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].id == idToSearch) {
+                    console.log("Found showtimes...");
+                    return showtimeUtils.processShowtimes(list[i].showtimes || []);
+                }
+            }
+            console.log("showtimes not found...");
+            return showtimeUtils.processShowtime([]);
+        },
+        processShowtimes: function(showtimes) {
+            var records = [];
+            for (var i = 0; i < showtimes.length; i++) {
+                var showtime = [];
+                var hasUrl = showtimes[i].url && showtimes[i].url.length ? 1 : 0;
+                var time = showtimeUtils.formatTime(showtimes[i].show_date, showtimes[i].show_time) + " [" + (hasUrl ? "x" : " ") + "]";
+                showtime.push(showtimes[i].id);
+                showtime.push(showtimeTypeMask[showtimes[i].type]);
+                showtime.push(time);
+                showtime.push(hasUrl);
+
+                records.push(showtime.join(DELIMETER_FIELD));
+            }
+            //bug 
+            if (records.length) {
+                console.log("Found records length: "+records.length);
+                messageHandler.sendData(pebbleMessagesIn.showtimes, records.join(DELIMETER_RECORD));
+            } else {
+                messageHandler.sendNoData("No showtimes");
+            }
+        },
+        formatTime: function(showdate, showtime) {
+            var d = new Date(showdate + " " + showtime);
+            var min = d.getMinutes();
+            var hours = d.getHours();
+            var hoursHp = hours % 12 || 12;
+            return (hoursHp > 9 ? hoursHp : "0" + hoursHp) + ":"
+                    + (min > 9 ? min : "0" + min)
+                    + (hours >= 12 ? "PM" : "AM");
+
+        }
+    };
     var theatreUtils = {
         formatDistance: function(dist) {
             var distNum = parseFloat(dist);
@@ -223,6 +299,34 @@ var PBMovies = function(initDoneCallback) {
             var prefUnit = service.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM);
             var conversion = prefUnit === DISTANCE_UNIT_KM ? DISTANCE_KM_IN_M : DISTANCE_MILE_IN_M;
             return Number(conversion * distNum).toPrecision(2) + prefUnit;
+        },
+        convertToData: function(theatres) {
+            var theatre, records = [];
+            for (var i = 0; i < theatres.length; i++) {
+                //"id,name,address,distance_m"
+                theatre = objectValues(theatres[i]);
+                theatre[3] = theatreUtils.formatDistance(theatre[3]);
+                records.push(theatre.join(DELIMETER_FIELD));
+            }
+            return records.join(DELIMETER_RECORD);
+        }
+    };
+
+    var movieUtils = {
+        convertToData: function(movies) {
+            var movie, records = [];
+            for (var i = 0; i < movies.length; i++) {
+                //id,title,genre,user_rating,rated,critic_rating,runtime                    
+                movie = objectValues(movies[i]);
+                movie[2] = movie[2] || " ";
+                movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
+                movie[4] = (!movie[4] || !movie[4].trim().length) ? "NR" : movie[4];
+                movie[4] = movie[4].replace(/Not Rated/i, "NR");
+                movie[5] = Math.min(Math.round(parseFloat(movie[5]) * 100), 99);
+                records.push(movie.join(DELIMETER_FIELD));
+            }
+
+            return records.join(DELIMETER_RECORD);
         }
     };
 
@@ -482,6 +586,24 @@ function objectValues(obj, exclude) {
         }
     }
     return op;
+}
+/**
+ * 
+ * @param {Array} objects
+ * @param {string} key
+ * @returns {undefined}
+ */
+function sort_in_place(objects, key) {
+    var tmp;
+    for (var i = 0; i < objects.length; i++) {
+        for (var j = i + 1; j < objects.length; j++) {
+            if (objects[i][key] > objects[j][key]) {
+                tmp = objects[i];
+                objects[i] = objects[j];
+                objects[j] = tmp;
+            }
+        }
+    }
 }
 
 function dateYmd() {

@@ -1,35 +1,7 @@
 #include <pebble.h>
 #include "pbmovies.h"
 #include "movies.h"
-
-
-#define MOVIE_FLD_LENGTH_ID 7
-#define MOVIE_FLD_LENGTH_TITLE 25
-#define MOVIE_FLD_LENGTH_GENRE 17
-#define MOVIE_FLD_LENGTH_USER_RATING 6
-#define MOVIE_FLD_LENGTH_CRITC_RATING 3
-#define MOVIE_FLD_LENGTH_RUNTIME 4
-#define MOVIE_FLD_LENGTH_RATED 6
-
-//id,title,genre,user_rating,rated,critic_rating,runtime                    
-#define MOVIE_FLD_IDX_ID 0
-#define MOVIE_FLD_IDX_TITLE 1
-#define MOVIE_FLD_IDX_GENRE 2
-#define MOVIE_FLD_IDX_USER_RATING 3
-#define MOVIE_FLD_IDX_RATED 4
-#define MOVIE_FLD_IDX_CRITC_RATING 5
-#define MOVIE_FLD_IDX_RUNTIME 6
-
-static struct MovieRecord {
-    char id[MOVIE_FLD_LENGTH_ID];
-    char title[MOVIE_FLD_LENGTH_TITLE];
-    char genre[MOVIE_FLD_LENGTH_GENRE];
-    char userRating[MOVIE_FLD_LENGTH_USER_RATING];
-    char criticRating[MOVIE_FLD_LENGTH_CRITC_RATING];
-    char runtime[MOVIE_FLD_LENGTH_RUNTIME];
-    char rated[MOVIE_FLD_LENGTH_RATED];
-} currentMovie;
-
+#include "preloader.h"
 
 const char *labelRated = "Rated";
 const char *labelPercent = "%";
@@ -80,9 +52,13 @@ static void set_current(uint8_t movieIndex) {
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (currentMovie.id) {
         if (moviesUI.currentMode == MovieUIModeMovies) {
-            APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get movie theatres for movie ID: %s", currentMovie.id);
+            //APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get movie theatres for movie ID: %s", currentMovie.id);
+            if(send_message_with_string(PB_MSG_OUT_GET_MOVIE_THEATRES, APP_KEY_MOVIE_ID, currentMovie.id, 0, NULL)){
+                preloader_init("Loading Theatres...");
+            }
         } else {
-            APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get showtimes for Movie ID: %s and TheatreID: %s", currentMovie.id, moviesUI.currentTheatreId);
+            //APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get showtimes for Movie ID: %s and TheatreID: %s", currentMovie.id, moviesUI.currentTheatreId);
+            load_showtimes_for_movie_theatre();
         }
     }
 }
@@ -125,17 +101,17 @@ static void movies_screen_unload() {
     action_bar_layer_destroy(moviesUI.actionBar);
 }
 
-static void draw_line_under_layer(Layer *layer, GContext* ctx) {
+static void draw_outline_around(Layer *layer, GContext* ctx) {
     GRect lb = layer_get_bounds(layer);
     //graphics_draw_line(ctx, GPoint(lb.origin.x- 2, lb.size.h + lb.origin.y + 1), GPoint(lb.origin.x + lb.size.w + 2, lb.size.h + lb.origin.y + 1));
     graphics_context_set_stroke_color(ctx, GColorBlack);
     graphics_draw_round_rect(ctx, lb, 2);
 }
 
-static void draw_outline_around(Layer *layer, GContext* ctx) {
-    GRect lb = layer_get_bounds(layer);
-    graphics_draw_rect(ctx, lb);
-}
+//static void draw_outline_around(Layer *layer, GContext* ctx) {
+//    GRect lb = layer_get_bounds(layer);
+//    graphics_draw_rect(ctx, lb);
+//}
 
 #define MOVIE_UI_TITLE_HEIGHT 40
 #define MOVIE_UI_Y_SPACING 2
@@ -163,7 +139,7 @@ static void movies_screen_load(Window *window) {
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.titleTxt));
 
     moviesUI.titleUnderline = layer_create(GRect(titleGrect.origin.x - 2,titleGrect.origin.y - 2, titleGrect.size.w + 4, titleGrect.size.h + 4));
-    layer_set_update_proc(moviesUI.titleUnderline, draw_line_under_layer);
+    layer_set_update_proc(moviesUI.titleUnderline, draw_outline_around);
     layer_add_child(windowLayer, moviesUI.titleUnderline);
 
     MOVIE_UI_INC_Y(yPos, MOVIE_UI_TITLE_HEIGHT);

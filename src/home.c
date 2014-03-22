@@ -32,9 +32,6 @@ static void home_screen_draw_header(GContext* ctx, const Layer *cell_layer, uint
 
 static void home_screen_select_handler(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
     // Use the row to specify which item will receive the select action
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Selected Index: %d", cell_index->row);
-
-
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
     if (iter == NULL) {

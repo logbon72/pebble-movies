@@ -6,8 +6,11 @@
 #define RADIUS_INC 3
 #define RADIUS_INITIAL 3
 #define ANIMATION_TIMEOUT 100
+#define STATUS_TEXT_LENGTH 32
 static Layer *square_layer;
 static GBitmap *statusBarIcon;
+char *STATUS_TEXT;
+
 // Timers can be canceled with `app_timer_cancel()`
 //static AppTimer *timer;
 
@@ -46,43 +49,50 @@ static void unload(Window *w) {
     preloader.isOn = 0;
 }
 
-void preloader_init(char *text) {
-    preloader.window = window_create();
-    window_set_background_color(preloader.window, GColorBlack);
-    window_set_status_bar_icon(preloader.window, statusBarIcon);
+static void preloader_appear(Window *window) {
+    const uint32_t timeout_ms = ANIMATION_TIMEOUT;
+    preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
+}
+
+static void preloader_load(Window *window) {
+    window_set_background_color(window, GColorBlack);
+    window_set_status_bar_icon(window, statusBarIcon);
     Layer *window_layer = window_get_root_layer(preloader.window);
 
     if (!statusBarIcon) {
         statusBarIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_STATUS_BAR);
     }
 
-
     GRect bounds = layer_get_bounds(window_layer);
     square_layer = layer_create(bounds);
     layer_set_update_proc(square_layer, update_square_layer);
     layer_add_child(window_layer, square_layer);
 
-    //square_path = gpath_create(&SQUARE_POINTS);
-    //gpath_move_to(square_path, grect_center_point(&bounds));
-
-    window_set_window_handlers(preloader.window, (WindowHandlers) {
-        .unload = unload,
-    });
-
-
-
-    preloader.statusText = text_layer_create(GRect(0, 85, bounds.size.w, bounds.size.h - 110));
-    text_layer_set_text(preloader.statusText, text);
+    preloader.statusText = text_layer_create(GRect(0, 80, bounds.size.w, bounds.size.h - 110));
+    text_layer_set_text(preloader.statusText, STATUS_TEXT);
     text_layer_set_background_color(preloader.statusText, GColorClear);
     text_layer_set_text_color(preloader.statusText, GColorWhite);
     text_layer_set_text_alignment(preloader.statusText, GTextAlignmentCenter);
-    text_layer_set_font(preloader.statusText, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+    text_layer_set_font(preloader.statusText, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+    text_layer_set_overflow_mode(preloader.statusText, GTextOverflowModeWordWrap);
+
     layer_add_child(window_layer, text_layer_get_layer(preloader.statusText));
+}
+
+void preloader_init(char *text) {
+    preloader.window = window_create();
+    STATUS_TEXT = text;
+
+    window_set_window_handlers(preloader.window, (WindowHandlers) {
+        .unload = unload,
+        .appear = preloader_appear,
+        .load = preloader_load
+    });
 
 
+    preloader.isOn = 1;
     const bool animated = true;
     window_stack_push(preloader.window, animated);
-    const uint32_t timeout_ms = ANIMATION_TIMEOUT;
-    preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
-    preloader.isOn = 1;
 }
+
+
