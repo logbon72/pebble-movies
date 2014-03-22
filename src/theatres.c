@@ -2,6 +2,18 @@
 #include "pbmovies.h"
 #include "theatres.h"
 
+#define THEATRE_FLD_SIZE_ID 8
+#define THEATRE_FLD_SIZE_NAME 48
+#define THEATRE_FLD_SIZE_ADDR 32
+#define THEATRE_FLD_SIZE_DISTANCE 8
+
+struct TheatreRecord {
+    char id[THEATRE_FLD_SIZE_ID];
+    char name[THEATRE_FLD_SIZE_NAME];
+    char address[THEATRE_FLD_SIZE_ADDR];
+    char distance[THEATRE_FLD_SIZE_DISTANCE];
+} currentTheatre;
+
 static void set_current_theatre(uint16_t theatreIndex) {
     if (theatreIndex >= theatresUI.total) {
         theatreIndex = 0;
@@ -28,25 +40,16 @@ static void set_current_theatre(uint16_t theatreIndex) {
     get_data_at(THEATRES_LIST, theatreIndex, 2, currentTheatre.address, THEATRE_FLD_SIZE_ADDR);
     get_data_at(THEATRES_LIST, theatreIndex, 3, currentTheatre.distance, THEATRE_FLD_SIZE_DISTANCE);
 
-//    APP_LOG(APP_LOG_LEVEL_INFO, "%s", currentTheatre.id);
-//    APP_LOG(APP_LOG_LEVEL_INFO, "%s", currentTheatre.name);
-//    APP_LOG(APP_LOG_LEVEL_INFO, "%s", currentTheatre.address);
-//    APP_LOG(APP_LOG_LEVEL_INFO, "%s", currentTheatre.distance);
-
     //set address - id, name, address, distance_m
     text_layer_set_text(theatresUI.address, currentTheatre.address);
     text_layer_set_text(theatresUI.name, currentTheatre.name);
-    if (currentTheatre.distance && strcmp(currentTheatre.distance, " ")) {
-        text_layer_set_text(theatresUI.distance, currentTheatre.distance);
-    } else {
-        text_layer_set_text(theatresUI.distance, "");
-    }
+    text_layer_set_text(theatresUI.distance, currentTheatre.distance);
 
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (currentTheatre.id) {
-        if (theatresUI.currentMode == THEATRE_UI_MODE_THEATRES) {
+        if (theatresUI.currentMode == TheatreUIModeTheatres) {
             APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get theatre movies for theatre ID: %s", currentTheatre.id);
         } else {
             APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get showtimes for theatre ID: %s and Movie ID: %s", currentTheatre.id, theatresUI.currentMovie);
@@ -75,7 +78,7 @@ static void theatre_click_config_provider(void *context) {
 static void theatres_screen_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
-    uint16_t usableWidth = bounds.size.w - 30 - 10;
+    uint16_t usableWidth = bounds.size.w - 25 - 10;
     uint16_t paddingSide = 10;
     //address
     theatresUI.address = text_layer_create(GRect(paddingSide, 5, usableWidth, 50));
@@ -101,7 +104,7 @@ static void theatres_screen_load(Window *window) {
     theatresUI.upIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_UP_WHITE);
     theatresUI.downIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_DOWN_WHITE);
 
-    if (theatresUI.currentMode == THEATRE_UI_MODE_THEATRES) {
+    if (theatresUI.currentMode == TheatreUIModeTheatres) {
         theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE_BLACK);
     } else {
         theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME_BLACK);
@@ -125,23 +128,6 @@ static void theatres_screen_unload() {
     text_layer_destroy(theatresUI.name);
     //text_layer_destroy(theatresUI.titleBar);
     action_bar_layer_destroy(theatresUI.actionBar);
-
-    //    if(currentTheatre.id){
-    //        free(currentTheatre.id);
-    //    }
-    //    
-    //    if(currentTheatre.name){
-    //        free(currentTheatre.name);
-    //    }
-    //    
-    //    if(currentTheatre.address){
-    //        free(currentTheatre.address);
-    //    }
-    //    
-    //    if(currentTheatre.distance){
-    //        free(currentTheatre.distance);
-    //    }
-
 }
 
 void theatres_screen_initialize(int total, enum TheatreUiMode mode, char *movieId) {

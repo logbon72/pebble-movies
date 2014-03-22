@@ -30,8 +30,10 @@ static void update_square_layer(Layer *layer, GContext* ctx) {
 static void timer_callback(void *context) {
     layer_mark_dirty(square_layer);
 
-    const uint32_t timeout_ms = ANIMATION_TIMEOUT;
-    preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
+    if (preloader.isOn) {
+        const uint32_t timeout_ms = ANIMATION_TIMEOUT;
+        preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
+    }
 }
 
 static void unload(Window *w) {

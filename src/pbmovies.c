@@ -11,11 +11,12 @@ static void handle_init_failed(const char *message);
 static void handle_data_received(uint8_t, uint8_t, uint8_t, char *);
 static void close_wait(void *);
 
-static const char *blankStr = "";
+//static const char *blankStr = "";
 char *messageBuffer;
 AppTimer *inboxWaitTimer;
 uint8_t currentWaiter = MSG_CODE_NO_WAIT;
 //char **dataRecords;
+uint8_t lastPage = 0;
 
 static void close_wait(void *context) {
     if (currentWaiter == MSG_CODE_NO_WAIT) {
@@ -27,6 +28,15 @@ static void close_wait(void *context) {
     }
 }
 
+static void reset_mssage_receiver() {
+    messageBuffer = NULL;
+    lastPage = 0;
+    if (inboxWaitTimer) {
+        app_timer_cancel(inboxWaitTimer);
+    }
+    currentWaiter = MSG_CODE_NO_WAIT;
+}
+
 static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPages, char *data) {
 
     APP_LOG(APP_LOG_LEVEL_INFO, "Received data Length: %d, Page %d of %d", strlen(data), page, totalPages);
@@ -35,50 +45,63 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
         return;
     }
 
-    if (!messageBuffer) {
-        messageBuffer = strdup(data);
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "message copied to buffer");
-    } else {
-        char *tmp = strdup(messageBuffer);
-        free(messageBuffer);
-        size_t newLen = strlen(tmp) + strlen(data) + 1;
-        messageBuffer = malloc(sizeof (char*) * newLen);
-        strcat(messageBuffer, tmp);
-        strcat(messageBuffer, data);
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "Concatenation successful, size now: %d", strlen(messageBuffer));
-        free(tmp);
+    if (page != lastPage + 1) {
+        APP_LOG(APP_LOG_LEVEL_WARNING, "Message broken");
+        return;
     }
 
-    //    if(data){
-    //        free(data);
-    //    }
+    lastPage = page;
+
+
+    if (page == 1) {
+        //buffer is should be assigned
+        switch (msgCode) {
+
+            case PB_MSG_IN_THEATRES:
+            case PB_MSG_IN_MOVIE_THEATRES:
+                messageBuffer = THEATRES_LIST;
+                break;
+            case PB_MSG_IN_MOVIES:
+            case PB_MSG_IN_THEATRE_MOVIES:
+                messageBuffer = MOVIES_LIST;
+                break;
+
+            case PB_MSG_IN_SHOWTIMES:
+                messageBuffer = SHOWTIMES_LIST;
+                break;
+            default:
+                APP_LOG(APP_LOG_LEVEL_DEBUG, "Message Code %d has no Buffer", msgCode);
+                return;
+        }
+    }
+
+    while (*data != '\0') {
+        *(messageBuffer++) = *data;
+        ++data;
+    }
+    //APP_LOG(APP_LOG_LEVEL_DEBUG, "Concatenation successful, size now: %d", );
 
 
     if (inboxWaitTimer) {
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Canceling timer");
         app_timer_cancel(inboxWaitTimer);
+        inboxWaitTimer = NULL;
     }
 
     if (page == totalPages) {
-        currentWaiter = MSG_CODE_NO_WAIT;
-
-        //APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", length);
-
+        *messageBuffer = '\0';
         window_stack_pop(false);
+        reset_mssage_receiver();
         switch (msgCode) {
 
             case PB_MSG_IN_THEATRES:
-                strncpy(THEATRES_LIST, messageBuffer, strlen(messageBuffer));
-
-                free(messageBuffer);
-                theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), THEATRE_UI_MODE_THEATRES, NULL);
+                APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", strlen(THEATRES_LIST));
+                theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeTheatres, NULL);
                 break;
 
             default:
                 APP_LOG(APP_LOG_LEVEL_DEBUG, "Message Code %d needs no handling", msgCode);
         }
-        messageBuffer = NULL;
-
     } else {
         //some more messages expected, wait
         currentWaiter = msgCode;
@@ -116,6 +139,7 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 
         case PB_MSG_IN_CONNECTION_ERROR:
         case PB_MSG_IN_NO_DATA:
+            preloader.isOn = 0;
             if (preloader.statusText) {
                 text_layer_set_text(preloader.statusText, message->value->cstring);
                 //@todo stop animation
@@ -255,7 +279,7 @@ char *str_dup_range(char* input, int offset, int len, char *dest) {
 
     //char *dest = malloc(sizeof (char*) * len);
     strncpy(dest, input + offset, len);
-    
+
     return dest;
 }
 
@@ -281,13 +305,13 @@ char *get_data_at(char* data, int row, int col, char dest[], int maxLength) {
     //starting point of column, start reading from row
     int colStartOffset = col <= 0 ? rowOffset : find_offset_of_nth_occurence(data, DELIMITER_FIELD, DELIMITER_RECORD, col, rowOffset + 1);
 
-    for(uint16_t i=0; i < maxLength-1; i++){
+    for (uint16_t i = 0; i < maxLength - 1; i++) {
         dest[i] = ' ';
     }
-    dest[maxLength-1] = '\0';
+    dest[maxLength - 1] = '\0';
     //APP_LOG(APP_LOG_LEVEL_INFO, "Length : %d", maxLength);
     //if none of such, then return NULL
-    strncpy(dest, blankStr, 1);
+    //strncpy(dest, blankStr, 1);
     if (colStartOffset < 0 && col > 0) {
         return dest;
     }
@@ -304,8 +328,8 @@ char *get_data_at(char* data, int row, int col, char dest[], int maxLength) {
     }
 
     int lenTmp = colEndOffset - colStartOffset - 1;
-    if (lenTmp > (maxLength-1)) {
-        lenTmp = maxLength-1;
+    if (lenTmp > (maxLength - 1)) {
+        lenTmp = maxLength - 1;
     }
     //APP_LOG(APP_LOG_LEVEL_INFO, "Offset %d to %d - Length = %d", colStartOffset, colEndOffset, lenTmp);
     return str_dup_range(data, colStartOffset + 1, lenTmp, dest);

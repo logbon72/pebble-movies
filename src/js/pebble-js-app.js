@@ -17,7 +17,7 @@ var DELIMETER_FIELD = "|";
 var DELIMETER_RECORD = "\t";
 
 var MAX_PAGES = 5;
-var MSG_INTERVAL = 4000;
+var MSG_INTERVAL = 2000;
 
 var DISTANCE_UNIT_KM = "km";
 var DISTANCE_UNIT_MILES = "mi";
@@ -142,10 +142,11 @@ var PBMovies = function(initDoneCallback) {
                     for (var i = 0; i < movies.length; i++) {
                         //id,title,genre,user_rating,rated,critic_rating,runtime                    
                         movie = objectValues(movies[i]);
+                        movie[2] = movie[2] || "-"; 
                         movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
-                        movie[4] = (!movie[4] || !movie[4].length) ? "NR" : movie[4];
+                        movie[4] = (!movie[4] || !movie[4].trim().length) ? "NR" : movie[4];
                         movie[4] = movie[4].replace(/Not Rated/i, "NR");
-                        movie[5] = Math.round(movie[5]);
+                        movie[5] = Math.min(Math.round(parseFloat(movie[5])*100),99);
                         records.push(movie.join(DELIMETER_FIELD));
                     }
                     messageHandler.sendData(pebbleMessagesIn.movies, records.join(DELIMETER_RECORD));
@@ -197,7 +198,7 @@ var PBMovies = function(initDoneCallback) {
             };
             console.log("Sending page " + currentPage + " of " + totalPages + " Length = " + outData.data.length);
             
-            //console.log("Out data"+JSON.stringify(outData));
+            console.log("Out data"+JSON.stringify(outData));
             Pebble.sendAppMessage(outData);
             if (currentPage < totalPages && currentPage < MAX_PAGES) {
                 setTimeout(function() {
