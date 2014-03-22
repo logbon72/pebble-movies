@@ -35,7 +35,7 @@ const char *labelRated = "Rated";
 const char *labelPercent = "%";
 const char *labelCritics = "Critics";
 const char *labelUsers = "Users";
-const char *labelMin = " min";
+const char *labelMin = "min";
 
 static void set_current(uint8_t movieIndex) {
     if (movieIndex >= moviesUI.total) {
@@ -65,7 +65,7 @@ static void set_current(uint8_t movieIndex) {
     get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_USER_RATING, currentMovie.userRating, MOVIE_FLD_LENGTH_USER_RATING);
     get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_RUNTIME, currentMovie.runtime, MOVIE_FLD_LENGTH_RUNTIME);
     get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_RATED, currentMovie.rated, MOVIE_FLD_LENGTH_RATED);
-    
+
 
     text_layer_set_text(moviesUI.titleTxt, currentMovie.title);
     text_layer_set_text(moviesUI.genreTxt, currentMovie.genre);
@@ -73,8 +73,9 @@ static void set_current(uint8_t movieIndex) {
     text_layer_set_text(moviesUI.userRatingTxt, currentMovie.userRating);
     text_layer_set_text(moviesUI.runtimeTxt, currentMovie.runtime);
     text_layer_set_text(moviesUI.ratedTxt, currentMovie.rated);
-}
 
+    //APP_LOG(APP_LOG_LEVEL_INFO, "Critic Rating: %s", currentMovie.criticRating);
+}
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (currentMovie.id) {
@@ -104,7 +105,6 @@ static void movie_click_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
 }
 
-
 static void movies_screen_unload() {
     text_layer_destroy(moviesUI.criticRatingLabelTxt);
     text_layer_destroy(moviesUI.criticRatingTxt);
@@ -117,6 +117,7 @@ static void movies_screen_unload() {
     text_layer_destroy(moviesUI.userRatingTxt);
     text_layer_destroy(moviesUI.minTxt);
 
+    layer_destroy(moviesUI.titleUnderline);
     gbitmap_destroy(moviesUI.downIcon);
     gbitmap_destroy(moviesUI.upIcon);
     gbitmap_destroy(moviesUI.selectIcon);
@@ -126,7 +127,9 @@ static void movies_screen_unload() {
 
 static void draw_line_under_layer(Layer *layer, GContext* ctx) {
     GRect lb = layer_get_bounds(layer);
-    graphics_draw_line(ctx, GPoint(lb.origin.x, lb.size.h + lb.origin.y), GPoint(lb.origin.x + lb.size.w, lb.size.h + lb.origin.y));
+    //graphics_draw_line(ctx, GPoint(lb.origin.x- 2, lb.size.h + lb.origin.y + 1), GPoint(lb.origin.x + lb.size.w + 2, lb.size.h + lb.origin.y + 1));
+    graphics_context_set_stroke_color(ctx, GColorBlack);
+    graphics_draw_round_rect(ctx, lb, 2);
 }
 
 static void draw_outline_around(Layer *layer, GContext* ctx) {
@@ -137,60 +140,69 @@ static void draw_outline_around(Layer *layer, GContext* ctx) {
 #define MOVIE_UI_TITLE_HEIGHT 40
 #define MOVIE_UI_Y_SPACING 2
 #define MOVIE_UI_RUNTIME_HEIGHT 20
-#define MOVIE_UI_RATING_HEIGHT 20
+#define MOVIE_UI_RATING_HEIGHT 24
 #define MOVIE_UI_INC_Y(y, h) (y+= h+MOVIE_UI_Y_SPACING)
 
-void movies_screen_load(Window *window) {
+static void movies_screen_load(Window *window) {
     Layer *windowLayer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(windowLayer);
 
-    uint16_t paddingSide = 10;
+    uint16_t paddingSide = 5;
     uint16_t yPos = 5;
     uint16_t allowedWth = bounds.size.w - paddingSide - 25;
 
     //title
-    moviesUI.titleTxt = text_layer_create(GRect(paddingSide, bounds.origin.y + yPos, allowedWth, MOVIE_UI_TITLE_HEIGHT));
-    text_layer_set_font(moviesUI.titleTxt, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    GRect titleGrect = GRect(paddingSide, bounds.origin.y + yPos, allowedWth, MOVIE_UI_TITLE_HEIGHT);
+
+
+    moviesUI.titleTxt = text_layer_create(titleGrect);
+    text_layer_set_font(moviesUI.titleTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
     text_layer_set_text_alignment(moviesUI.titleTxt, GTextAlignmentCenter);
-    Layer *titleLayer = text_layer_get_layer(moviesUI.titleTxt);
-    layer_set_update_proc(titleLayer, draw_line_under_layer);
-    layer_add_child(windowLayer, titleLayer);
+    //Layer *titleLayer = text_layer_get_layer(moviesUI.titleTxt);
+    //layer_set_update_proc(titleLayer, draw_line_under_layer);
+    layer_add_child(windowLayer, text_layer_get_layer(moviesUI.titleTxt));
+
+    moviesUI.titleUnderline = layer_create(GRect(titleGrect.origin.x - 2,titleGrect.origin.y - 2, titleGrect.size.w + 4, titleGrect.size.h + 4));
+    layer_set_update_proc(moviesUI.titleUnderline, draw_line_under_layer);
+    layer_add_child(windowLayer, moviesUI.titleUnderline);
 
     MOVIE_UI_INC_Y(yPos, MOVIE_UI_TITLE_HEIGHT);
 
 
     moviesUI.runtimeTxt = text_layer_create(GRect(paddingSide, yPos, 40, MOVIE_UI_RUNTIME_HEIGHT));
-    text_layer_set_font(moviesUI.runtimeTxt, fonts_get_system_font(FONT_KEY_BITHAM_18_LIGHT_SUBSET));
-    text_layer_set_text_alignment(moviesUI.runtimeTxt, GTextAlignmentRight);
+    text_layer_set_font(moviesUI.runtimeTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+    //text_layer_set_text_alignment(moviesUI.runtimeTxt, GTextAlignmentRight);
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.runtimeTxt));
 
-    moviesUI.minTxt = text_layer_create(GRect(paddingSide + 40 + 1, yPos, 40, MOVIE_UI_RUNTIME_HEIGHT));
-    text_layer_set_font(moviesUI.minTxt, fonts_get_system_font(FONT_KEY_BITHAM_18_LIGHT_SUBSET));
+    moviesUI.minTxt = text_layer_create(GRect(30, yPos, 40, MOVIE_UI_RUNTIME_HEIGHT));
+    text_layer_set_font(moviesUI.minTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
     text_layer_set_text(moviesUI.minTxt, labelMin);
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.minTxt));
 
     //rated text
-    moviesUI.ratedTxt = text_layer_create(GRect(allowedWth - 40, yPos, 40, MOVIE_UI_RUNTIME_HEIGHT));
-    text_layer_set_font(moviesUI.ratedTxt, fonts_get_system_font(FONT_KEY_BITHAM_18_LIGHT_SUBSET));
-    text_layer_set_text_alignment(moviesUI.ratedTxt, GTextAlignmentCenter);
-    text_layer_set_background_color(moviesUI.ratedTxt, GColorBlack);
-    text_layer_set_text_color(moviesUI.ratedTxt, GColorWhite);
+    moviesUI.ratedTxt = text_layer_create(GRect(allowedWth - 60, yPos, 60, MOVIE_UI_RUNTIME_HEIGHT));
+    text_layer_set_font(moviesUI.ratedTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_text_alignment(moviesUI.ratedTxt, GTextAlignmentRight);
+    //    text_layer_set_background_color(moviesUI.ratedTxt, GColorBlack);
+    //text_layer_set_text_color(moviesUI.ratedTxt, GColorWhite);
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.ratedTxt));
 
     MOVIE_UI_INC_Y(yPos, MOVIE_UI_RUNTIME_HEIGHT);
+    MOVIE_UI_INC_Y(yPos, 2);
 
     //rated label
-    moviesUI.userRatingLabelTxt = text_layer_create(GRect(0, yPos, 70, MOVIE_UI_RATING_HEIGHT));
+    moviesUI.userRatingLabelTxt = text_layer_create(GRect(0, yPos, 50, MOVIE_UI_RATING_HEIGHT));
     text_layer_set_background_color(moviesUI.userRatingLabelTxt, GColorBlack);
     text_layer_set_text_color(moviesUI.userRatingLabelTxt, GColorWhite);
     text_layer_set_text(moviesUI.userRatingLabelTxt, labelUsers);
     text_layer_set_font(moviesUI.userRatingLabelTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.userRatingLabelTxt));
     //rating itself
-    moviesUI.userRatingTxt = text_layer_create(GRect(71, yPos, 40, MOVIE_UI_RATING_HEIGHT));
+    moviesUI.userRatingTxt = text_layer_create(GRect(61, yPos, 40, MOVIE_UI_RATING_HEIGHT));
     text_layer_set_font(moviesUI.userRatingTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+    //text_layer_set_text_alignment(moviesUI.userRatingTxt, GTextAlignmentRight);
     Layer *userRatingLayer = text_layer_get_layer(moviesUI.userRatingTxt);
-    layer_set_update_proc(userRatingLayer, draw_outline_around);
+    //layer_set_update_proc(userRatingLayer, draw_outline_around);
     layer_add_child(windowLayer, userRatingLayer);
 
 
@@ -198,7 +210,7 @@ void movies_screen_load(Window *window) {
     MOVIE_UI_INC_Y(yPos, 5);
 
     //metacrtic label
-    moviesUI.criticRatingLabelTxt = text_layer_create(GRect(0, yPos, 70, MOVIE_UI_RATING_HEIGHT));
+    moviesUI.criticRatingLabelTxt = text_layer_create(GRect(0, yPos, 50, MOVIE_UI_RATING_HEIGHT));
     text_layer_set_background_color(moviesUI.criticRatingLabelTxt, GColorBlack);
     text_layer_set_text_color(moviesUI.criticRatingLabelTxt, GColorWhite);
     text_layer_set_text(moviesUI.criticRatingLabelTxt, labelCritics);
@@ -206,16 +218,17 @@ void movies_screen_load(Window *window) {
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.criticRatingLabelTxt));
 
     //metacritic itself
-    moviesUI.criticRatingTxt = text_layer_create(GRect(71, yPos, 30, MOVIE_UI_RATING_HEIGHT));
+    moviesUI.criticRatingTxt = text_layer_create(GRect(61, yPos, 20, MOVIE_UI_RATING_HEIGHT));
     text_layer_set_font(moviesUI.criticRatingTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-    Layer *criticRatingLayer = text_layer_get_layer(moviesUI.criticRatingTxt);
-    layer_set_update_proc(criticRatingLayer, draw_outline_around);
-    layer_add_child(windowLayer, criticRatingLayer);
+    //text_layer_set_text_alignment(moviesUI.criticRatingTxt, GTextAlignmentRight);
+    //Layer *criticRatingLayer = ;
+    //layer_set_update_proc(criticRatingLayer, draw_outline_around);
+    layer_add_child(windowLayer, text_layer_get_layer(moviesUI.criticRatingTxt));
 
     //the percentage
-    moviesUI.percentLabelTxt = text_layer_create(GRect(101, yPos, 10, MOVIE_UI_RATING_HEIGHT));
-    text_layer_set_background_color(moviesUI.percentLabelTxt, GColorBlack);
-    text_layer_set_text_color(moviesUI.percentLabelTxt, GColorWhite);
+    moviesUI.percentLabelTxt = text_layer_create(GRect(77, yPos, 20, MOVIE_UI_RATING_HEIGHT));
+    //text_layer_set_background_color(moviesUI.percentLabelTxt, GColorBlack);
+    //text_layer_set_text_color(moviesUI.percentLabelTxt, GColorWhite);
     text_layer_set_text(moviesUI.percentLabelTxt, labelPercent);
     text_layer_set_font(moviesUI.percentLabelTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.percentLabelTxt));
@@ -225,6 +238,7 @@ void movies_screen_load(Window *window) {
     //next is the genre
     moviesUI.genreTxt = text_layer_create(GRect(paddingSide, yPos, allowedWth, bounds.size.h - yPos));
     text_layer_set_text_alignment(moviesUI.genreTxt, GTextAlignmentCenter);
+    text_layer_set_font(moviesUI.genreTxt, fonts_get_system_font(FONT_KEY_GOTHIC_14));
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.genreTxt));
 
     moviesUI.actionBar = action_bar_layer_create();

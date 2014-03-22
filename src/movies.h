@@ -8,6 +8,7 @@ enum MovieUIMode {
 struct MovieUIScreen {
     Window *window;
     TextLayer *titleTxt;
+    Layer *titleUnderline;
     TextLayer *runtimeTxt;
     TextLayer *minTxt;
     TextLayer *ratedTxt;
@@ -27,3 +28,5 @@ struct MovieUIScreen {
     char *currentTheatreId;
     enum MovieUIMode currentMode;
 } moviesUI;
+
+void movies_screen_init(int, enum MovieUIMode, char*);

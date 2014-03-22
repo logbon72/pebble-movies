@@ -142,7 +142,7 @@ var PBMovies = function(initDoneCallback) {
                     for (var i = 0; i < movies.length; i++) {
                         //id,title,genre,user_rating,rated,critic_rating,runtime                    
                         movie = objectValues(movies[i]);
-                        movie[2] = movie[2] || "-"; 
+                        movie[2] = movie[2] || " "; 
                         movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
                         movie[4] = (!movie[4] || !movie[4].trim().length) ? "NR" : movie[4];
                         movie[4] = movie[4].replace(/Not Rated/i, "NR");
@@ -198,7 +198,7 @@ var PBMovies = function(initDoneCallback) {
             };
             console.log("Sending page " + currentPage + " of " + totalPages + " Length = " + outData.data.length);
             
-            console.log("Out data"+JSON.stringify(outData));
+            //console.log("Out data"+JSON.stringify(outData));
             Pebble.sendAppMessage(outData);
             if (currentPage < totalPages && currentPage < MAX_PAGES) {
                 setTimeout(function() {

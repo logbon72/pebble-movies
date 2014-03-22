@@ -4,6 +4,7 @@
 #include "home.h"
 #include "theatres.h"
 #include "preloader.h"
+#include "movies.h"
 #define MSG_CODE_NO_WAIT (uint8_t) 6000
 
 static void handle_start_app(void);
@@ -97,6 +98,12 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint8_t totalPag
             case PB_MSG_IN_THEATRES:
                 APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", strlen(THEATRES_LIST));
                 theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeTheatres, NULL);
+                break;
+                
+            case PB_MSG_IN_MOVIES:
+                APP_LOG(APP_LOG_LEVEL_INFO, "Movie Records: (Length=%d) ", strlen(MOVIES_LIST));
+                //theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeTheatres, NULL);
+                movies_screen_init(record_count(MOVIES_LIST, DELIMITER_RECORD), MovieUIModeMovies, NULL);
                 break;
 
             default:
@@ -332,5 +339,7 @@ char *get_data_at(char* data, int row, int col, char dest[], int maxLength) {
         lenTmp = maxLength - 1;
     }
     //APP_LOG(APP_LOG_LEVEL_INFO, "Offset %d to %d - Length = %d", colStartOffset, colEndOffset, lenTmp);
-    return str_dup_range(data, colStartOffset + 1, lenTmp, dest);
+    char *toReturn = str_dup_range(data, colStartOffset + 1, lenTmp, dest);
+    toReturn[lenTmp] = '\0';
+    return toReturn;
 }
