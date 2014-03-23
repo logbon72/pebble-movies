@@ -4,7 +4,7 @@
     "longName": "Pebble Movies- Movie Showtimes on Pebble",
     "companyName": "Joseph Orilogbon",
     "versionCode": 1,
-    "versionLabel": "1.0.0",
+    "versionLabel": "1.0.21",
     "watchapp": {
         "watchface": false
     },

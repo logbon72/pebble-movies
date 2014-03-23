@@ -336,6 +336,16 @@ var PBMovies = function(initDoneCallback) {
         },
         convertToData: function(theatres) {
             var theatre, records = [];
+            sort_in_place(theatres, 'distance_m', function(t1, t2) {
+                var dist1 = parseInt(t1.distance_m);
+                var dist2 = parseInt(t2.distance_m);
+                if (dist1 === dist2) {
+                    return 0;
+                }
+                dist1 = dist1 < 0 ? 10000000000 : dist1;
+                dist2 = dist2 < 0 ? 10000000000 : dist2;
+                return dist1 > dist2 ? 1 : -1;
+            });
             for (var i = 0; i < theatres.length; i++) {
                 //"id,name,address,distance_m"
                 theatre = objectValues(theatres[i]);
@@ -748,13 +758,16 @@ function objectValues(obj, exclude) {
  * 
  * @param {Array} objects
  * @param {string} key
+ * @param {function} compCb
  * @returns {undefined}
  */
-function sort_in_place(objects, key) {
-    var tmp;
+function sort_in_place(objects, key, compCb) {
+    var tmp, isGreater;
     for (var i = 0; i < objects.length; i++) {
         for (var j = i + 1; j < objects.length; j++) {
-            if (objects[i][key] > objects[j][key]) {
+            isGreater = compCb ? (compCb(objects[i], objects[j]) > 0) :
+                    (objects[i][key] > objects[j][key]);
+            if (isGreater) {
                 tmp = objects[i];
                 objects[i] = objects[j];
                 objects[j] = tmp;
