@@ -6,9 +6,9 @@ enum MovieUIMode {
 };
 
 
-#define MOVIE_FLD_LENGTH_ID 7
+#define MOVIE_FLD_LENGTH_ID 6
 #define MOVIE_FLD_LENGTH_TITLE 25
-#define MOVIE_FLD_LENGTH_GENRE 17
+#define MOVIE_FLD_LENGTH_GENRE 10
 #define MOVIE_FLD_LENGTH_USER_RATING 6
 #define MOVIE_FLD_LENGTH_CRITC_RATING 3
 #define MOVIE_FLD_LENGTH_RUNTIME 4
@@ -33,6 +33,6 @@ struct MovieRecord {
     char rated[MOVIE_FLD_LENGTH_RATED];
 } currentMovie;
 
-char MOVIES_LIST[3072];
+char MOVIES_LIST[2480];
 
 void movies_screen_init(int, enum MovieUIMode, char*);

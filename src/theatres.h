@@ -12,10 +12,10 @@ enum TheatreUiMode {
 };
 //struct TheatreUI movieTheatresUI;
 
-#define THEATRE_FLD_SIZE_ID 8
-#define THEATRE_FLD_SIZE_NAME 48
-#define THEATRE_FLD_SIZE_ADDR 32
-#define THEATRE_FLD_SIZE_DISTANCE 8
+#define THEATRE_FLD_SIZE_ID 7
+#define THEATRE_FLD_SIZE_NAME 33
+#define THEATRE_FLD_SIZE_ADDR 33
+#define THEATRE_FLD_SIZE_DISTANCE 9
 
 struct TheatreRecord {
     char id[THEATRE_FLD_SIZE_ID];
@@ -25,6 +25,6 @@ struct TheatreRecord {
 } currentTheatre;
 
 
-char THEATRES_LIST[3072];
+char THEATRES_LIST[2500];
 
 void theatres_screen_initialize(int, enum TheatreUiMode, char*);

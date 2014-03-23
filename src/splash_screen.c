@@ -4,7 +4,7 @@
 
 //struct SplsplashScreen splashScreen;
 
-struct SplashScreen {
+static struct SplashScreen {
     Window *window;
     TextLayer *statusText;
     GBitmap *img;

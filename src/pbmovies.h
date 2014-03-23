@@ -33,6 +33,7 @@ enum PbMsgIn {
     PB_MSG_IN_MOVIE_THEATRES,
     PB_MSG_IN_SHOWTIMES,
     PB_MSG_IN_NO_DATA,
+    PB_MSG_IN_QR_CODE,
 };
 
 enum PbMsgOut {
@@ -42,6 +43,7 @@ enum PbMsgOut {
     PB_MSG_OUT_GET_THEATRE_MOVIES = 3,
     PB_MSG_OUT_GET_MOVIE_THEATRES = 4,
     PB_MSG_OUT_GET_SHOWTIMES = 5,
+    PB_MSG_OUT_GET_QR_CODE = 6,
 };
 
 
@@ -53,8 +55,8 @@ enum PbMsgOut {
 
 
 void app_message_init(void);
-char** str_split(char*, const char, int*);
-char *strdup(const char *);
+//char** str_split(char*, const char, int*);
+//char *strdup(const char *);
 short int record_count(char*, const char);
 char *str_dup_range(char*, int, int, char *);
 short int find_offset_of_nth_occurence(char*, char, char, int, short int);

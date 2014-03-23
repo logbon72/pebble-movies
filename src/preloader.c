@@ -124,6 +124,7 @@ void preloader_set_loading() {
 }
 
 void preloader_set_timed_out() {
+    preloader_set_is_on(1);
     preloader_set_status(TIME_OUT);
 }
 

@@ -17,7 +17,7 @@ static const char* sectionHeader = "Available Showtimes";
 
 #define MAX_SHOWTIMES_COUNT 25
 
-#define SHOWTIME_FLD_LENGTH_ID 9 
+#define SHOWTIME_FLD_LENGTH_ID 8
 #define SHOWTIME_FLD_LENGTH_TYPE 2
 #define SHOWTIME_FLD_LENGTH_TIME 8
 #define SHOWTIME_FLD_LENGTH_LINK 2
@@ -83,9 +83,10 @@ static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *
 static void menu_select_handler(MenuLayer *menu_layer, MenuIndex *ci, void *data) {
     // Use the row to specify which item will receive the select action
     if (showtimes[ci->row].link[0] == SHOWTIME_CAN_BUY) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Can Buy ");
-    } else {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Can't Buy ");
+        if (send_message_with_string(PB_MSG_OUT_GET_QR_CODE,
+                APP_KEY_SHOWTIME_ID, showtimes[ci->row].id, 0, NULL)) {
+            preloader_init();
+        }
     }
 }
 

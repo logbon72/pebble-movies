@@ -40,6 +40,7 @@ var pebbleMessagesIn = {
     , movieTheatres: 6
     , showtimes: 7
     , noData: 8
+    , qrCode: 9
 };
 
 var pebbleMessagesOut = {
@@ -49,6 +50,7 @@ var pebbleMessagesOut = {
     getTheatreMovies: 3,
     getMovieTheatres: 4
     , getShowtimes: 5
+    , getQrCode: 6
 };
 //console.log("Is this working");
 /**
@@ -194,6 +196,26 @@ var PBMovies = function(initDoneCallback) {
                 }, messageHandler.handleErrors);
             }
         },
+        getQrCode: function(dataIn) {
+            var showtimeId = dataIn.showtimeId;
+            //console.log("In Here for getQrCode");
+            var resourceUrl = service.proxy('qr', {"showtime_id": showtimeId}, null, messageHandler.handleErrors, true);
+            console.log("Resource URL: " + resourceUrl);
+            downloadBinaryResource(resourceUrl, function(bytes) {
+                transferImageBytes(bytes, MAX_DATA_LENGTH,
+                        function() {
+                            console.log("Done!");
+                            //transferInProgress = false;
+                        },
+                        function(e) {
+                            console.log("Failed! " + e);
+                            //transferInProgress = false;
+                        }
+                );
+            }, function(e) {
+                console.log(e);
+            });
+        },
         handleErrors: function(err) {
             console.log("Errors occured while getting data :" + JSON.stringify(err));
             Pebble.sendAppMessage({
@@ -209,12 +231,15 @@ var PBMovies = function(initDoneCallback) {
             }
             return data;
         },
-        sendData: function(msgCode, data, currentPage) {
+        sendData: function(msgCode, data, currentPage, raw, retries) {
             lastPbMsgIn = msgCode;
-            if (data.match(/[^\x00-\x7F]/g)) {
+            if (!raw && data.match(/[^\x00-\x7F]/g)) {
                 data = data.replace(/[^\x00-\x7F]/g, "*");
             }
 
+            if (!retries) {
+                retries = 0;
+            }
             data = messageHandler.truncateDate(data);
             if (!currentPage)
                 currentPage = 1;
@@ -231,12 +256,21 @@ var PBMovies = function(initDoneCallback) {
             console.log("Sending page " + currentPage + " of " + totalPages + " Length = " + outData.data.length);
 
             //console.log("Out data" + JSON.stringify(outData));
-            Pebble.sendAppMessage(outData);
-            if (currentPage < totalPages && currentPage < MAX_PAGES) {
-                setTimeout(function() {
-                    messageHandler.sendData(msgCode, data, ++currentPage);
-                }, MSG_INTERVAL);
-            }
+            Pebble.sendAppMessage(outData, function(e) {
+                retries = 0;
+                if (currentPage < totalPages && currentPage < MAX_PAGES) {
+                    messageHandler.sendData(msgCode, data, ++currentPage, raw, retries);
+                }
+
+            }, function(e) {
+
+                if (retries++ < 3) {
+                    messageHandler.sendData(msgCode, data, ++currentPage, raw, retries);
+                } else {
+                    console.log("Failed...");
+                }
+            });
+
         },
         sendNoData: function(msg) {
             Pebble.sendAppMessage({
@@ -251,11 +285,11 @@ var PBMovies = function(initDoneCallback) {
         processFromList: function(list, idToSearch) {
             for (var i = 0; i < list.length; i++) {
                 if (list[i].id == idToSearch) {
-                    console.log("Found showtimes...");
+                    //console.log("Found showtimes...");
                     return showtimeUtils.processShowtimes(list[i].showtimes || []);
                 }
             }
-            console.log("showtimes not found...");
+            //console.log("showtimes not found...");
             return showtimeUtils.processShowtime([]);
         },
         processShowtimes: function(showtimes) {
@@ -273,7 +307,7 @@ var PBMovies = function(initDoneCallback) {
             }
             //bug 
             if (records.length) {
-                console.log("Showtimes: "+JSON.stringify(records));
+                //console.log("Showtimes: " + JSON.stringify(records));
                 messageHandler.sendData(pebbleMessagesIn.showtimes, records.join(DELIMETER_RECORD));
             } else {
                 messageHandler.sendNoData("No showtimes");
@@ -346,7 +380,7 @@ var PBMovies = function(initDoneCallback) {
             }
             return defaultValue ? defaultValue : null;
         },
-        proxy: function(command, data, successCallback, errorCallback) {
+        proxy: function(command, data, successCallback, errorCallback, urlOnly) {
             var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
             var urlData = {token: service.signRequest(), 'date': currentDate};
             for (i in locationInfo) {
@@ -359,8 +393,11 @@ var PBMovies = function(initDoneCallback) {
             if (method === 'GET' && data) {
                 url += "&" + serializeData(data);
             }
+            if (urlOnly) {
+                return url;
+            }
             console.log("Making proxy command: " + command + " Method");
-            console.log("URL: " + url);
+            ///console.log("URL: " + url);
             return makeRequest(url, method, reqData, successCallback, errorCallback);
         },
         signRequest: function() {
@@ -461,9 +498,11 @@ var PBMovies = function(initDoneCallback) {
         },
         handleMessage: function(payload) {
             var msgCode = parseInt(payload.code);
+            console.log("Handling message... "+msgCode);
             for (var i in pebbleMessagesOut) {
                 if (pebbleMessagesOut[i] === msgCode) {
                     if (messageHandler.hasOwnProperty(i)) {
+                        console.log("Handler found ");
                         return messageHandler[i](payload);
                     } else {
                         console.log("Message handler does not have method for: " + i);
@@ -490,7 +529,7 @@ var initFunction = function() {
     movieService = new PBMovies(function() {
         timeSinceLaunch = currentTimeInMs() - timeStarted;
         setTimeout(function() {
-            console.log("calling off splash screen");//
+            //console.log("calling off splash screen");//
             Pebble.sendAppMessage({
                 "code": pebbleMessagesIn.startApp
             });
@@ -505,7 +544,7 @@ Pebble.addEventListener("ready", function(e) {
 
 Pebble.addEventListener("appmessage",
         function(e) {
-            console.log("Received message: " + JSON.stringify(e.payload));
+            //console.log("Received message: " + JSON.stringify(e.payload));
             if (movieService) {
                 movieService.handleMessage(e.payload);
             }
@@ -536,6 +575,97 @@ function currentTimeInMs() {
     return new Date().getTime();
 }
 
+function transferImageBytes(bytes, chunkSize, successCb, failureCb) {
+    var retries = 0;
+
+    success = function() {
+        console.log("Success cb=" + successCb);
+        if (successCb !== undefined) {
+            successCb();
+        }
+    };
+    failure = function(e) {
+        console.log("Failure cb=" + failureCb);
+        if (failureCb !== undefined) {
+            failureCb(e);
+        }
+    };
+
+    // This function sends chunks of data.
+    sendChunk = function(start) {
+        var txbuf = bytes.slice(start, start + chunkSize);
+
+        console.log("Sending " + txbuf.length + " bytes - starting at offset " + start);
+        var page = Math.round(start / chunkSize) + 1;
+        var totalPages = Math.ceil(bytes.length / chunkSize);
+        Pebble.sendAppMessage({
+            "data": txbuf,
+            "code": pebbleMessagesIn.qrCode,
+            "page": page,
+            "totalPages": totalPages
+        },
+        function(e) {
+            // If there is more data to send - send it.
+            if (bytes.length > start + chunkSize) {
+                sendChunk(start + chunkSize);
+            }
+// Otherwise we are done sending. Send closing message.
+//            else {
+//                Pebble.sendAppMessage({"NETIMAGE_END": "done"}, success, failure);
+//            }
+        },
+                // Failed to send message - Retry a few times.
+                        function(e) {
+                            if (retries++ < 3) {
+                                console.log("Got a nack for chunk #" + start + " - Retry...");
+                                sendChunk(start);
+                            }
+                            else {
+                                failure(e);
+                            }
+                        }
+                );
+            };
+
+    sendChunk(0);
+    // Let the pebble app know how much data we want to send.
+//  Pebble.sendAppMessage({"NETIMAGE_BEGIN": bytes.length },
+//    function (e) {
+//      // success - start sending
+//      sendChunk(0);
+//    }, failure);
+
+}
+
+function downloadBinaryResource(imageURL, callback, errorCallback) {
+    var req = new XMLHttpRequest();
+    req.open("GET", imageURL, true);
+    req.responseType = "arraybuffer";
+    req.onreadystatechange = function(e) {
+        if (req.readyState === 4) {
+            console.log("loaded");
+            var buf = req.response;
+            if (req.status === 200 && buf) {
+                var byteArray = new Uint8Array(buf);
+                var arr = [];
+                for (var i = 0; i < byteArray.byteLength; i++) {
+                    arr.push(byteArray[i]);
+                }
+
+                console.log("Received image with " + byteArray.length + " bytes.");
+                callback(arr);
+            }
+            else {
+                errorCallback("Request status is " + req.status);
+            }
+        }
+    };
+    req.onerror = function(e) {
+        errorCallback(e);
+    };
+    req.send(null);
+}
+
 /**
  * 
  * @param {string} url
@@ -563,7 +693,12 @@ var makeRequest = function(url, method, data, successHandler, errorHandler) {
             if (xhr.status === 200) {
                 //console.log(xhr.responseText);
                 if (successHandler) {
-                    response = JSON.parse(xhr.responseText);
+                    //console.log("Received Mime: "+xhr.getResponseHeader('content-type'));
+                    if (xhr.getResponseHeader('content-type').match(/image|octet|stream/)) {
+                        response = xhr.responseText;
+                    } else {
+                        response = JSON.parse(xhr.responseText);
+                    }
                     successHandler(response, xhr);
                 }
             } else {
@@ -654,6 +789,7 @@ function utf8_encode(a) {
     }
     return c;
 }
+
 function sha1(c) {
     var d = function(n, s) {
         var a = (n << s) | (n >>> (32 - s));
