@@ -109,7 +109,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
         }
     } else {
         //memcpy(ctx->data + ctx->index, tuple->value->data, tuple->length);
-        APP_LOG(APP_LOG_LEVEL_DEBUG,"Data length: %d", tuple->length);
+        //APP_LOG(APP_LOG_LEVEL_DEBUG,"Data length: %d", tuple->length);
         memcpy(QR_CODE_BUFFER + (page - 1) * JS_DATA_PER_SEND, tuple->value->data, tuple->length);
         totalDataReceived += tuple->length;
     }
@@ -125,7 +125,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
             *messageBuffer = '\0';
         }
 
-        APP_LOG(APP_LOG_LEVEL_DEBUG,"Total Received %d",totalDataReceived);
+        //APP_LOG(APP_LOG_LEVEL_DEBUG,"Total Received %d",totalDataReceived);
         reset_message_receiver();
         //preloader_set_is_on(0);
         preloader_stop();

@@ -88,7 +88,7 @@ var PBMovies = function(initDoneCallback) {
     };
 
     var locationSet = function() {
-        console.log("Location is set" + JSON.stringify(locationInfo));
+        //console.log("Location is set" + JSON.stringify(locationInfo));
         _initRegistration();
     };
 
@@ -111,13 +111,13 @@ var PBMovies = function(initDoneCallback) {
 
     var register = function() {
         var deviceUUID = Pebble.getAccountToken();
-        console.log("UUID: " + deviceUUID);
+        //console.log("UUID: " + deviceUUID);
         service.proxy('register', {'device_uuid': deviceUUID}, function(resp) {
             service.store('secretKey', secretKey = resp.device.secret_key);
             service.store('deviceId', deviceId = resp.device.id);
             registerDone();
         }, function(xhr) {
-            console.log("Response: " + xhr.responseText);
+            //console.log("Response: " + xhr.responseText);
             Pebble.sendAppMessage({
                 "status": 0,
                 "message": "Connection error"
@@ -126,7 +126,7 @@ var PBMovies = function(initDoneCallback) {
     };
 
     var registerDone = function() {
-        console.log("Registration Done: Device ID : " + deviceId + " \nSecretKey: " + secretKey.substring(0, 10) + "...");
+        //console.log("Registration Done: Device ID : " + deviceId + " \nSecretKey: " + secretKey.substring(0, 10) + "...");
         //service.isReady = true;
         initDoneCallback();
         preload();
@@ -134,9 +134,9 @@ var PBMovies = function(initDoneCallback) {
 
     var preload = function() {
         service.proxy('preload', null, function(data) {
-            console.log("data preloaded:" + JSON.stringify(data));
+            //console.log("data preloaded:" + JSON.stringify(data));
         }, function(xhr) {
-            console.log("Status: " + xhr.status + " Text: " + xhr.responseText);
+            //console.log("Status: " + xhr.status + " Text: " + xhr.responseText);
         });
     };
 
@@ -200,7 +200,7 @@ var PBMovies = function(initDoneCallback) {
             var showtimeId = dataIn.showtimeId;
             //console.log("In Here for getQrCode");
             var resourceUrl = service.proxy('qr', {"showtime_id": showtimeId}, null, messageHandler.handleErrors, true);
-            console.log("Resource URL: " + resourceUrl);
+            //console.log("Resource URL: " + resourceUrl);
             downloadBinaryResource(resourceUrl, function(bytes) {
                 transferImageBytes(bytes, MAX_DATA_LENGTH,
                         function() {
@@ -208,7 +208,7 @@ var PBMovies = function(initDoneCallback) {
                             //transferInProgress = false;
                         },
                         function(e) {
-                            console.log("Failed! " + e);
+                            //console.log("Failed! " + e);
                             //transferInProgress = false;
                         }
                 );
@@ -217,7 +217,7 @@ var PBMovies = function(initDoneCallback) {
             });
         },
         handleErrors: function(err) {
-            console.log("Errors occured while getting data :" + JSON.stringify(err));
+            //console.log("Errors occured while getting data :" + JSON.stringify(err));
             Pebble.sendAppMessage({
                 "code": pebbleMessagesIn.connectionError,
                 "message": "Connection Error"
@@ -396,7 +396,7 @@ var PBMovies = function(initDoneCallback) {
             if (urlOnly) {
                 return url;
             }
-            console.log("Making proxy command: " + command + " Method");
+            //console.log("Making proxy command: " + command + " Method");
             ///console.log("URL: " + url);
             return makeRequest(url, method, reqData, successCallback, errorCallback);
         },
@@ -498,7 +498,7 @@ var PBMovies = function(initDoneCallback) {
         },
         handleMessage: function(payload) {
             var msgCode = parseInt(payload.code);
-            console.log("Handling message... "+msgCode);
+            //console.log("Handling message... "+msgCode);
             for (var i in pebbleMessagesOut) {
                 if (pebbleMessagesOut[i] === msgCode) {
                     if (messageHandler.hasOwnProperty(i)) {
@@ -551,6 +551,28 @@ Pebble.addEventListener("appmessage",
         }
 );
 
+
+Pebble.addEventListener("webviewclosed", function(e) {
+    //console.log("configuration closed");
+    // webview closed
+    var options = JSON.parse(decodeURIComponent(e.response));
+    var keys = [SETTING_DEFAULT_CITY, SETTING_DEFAULT_COUNTRY, SETTING_DEFAULT_POSTAL_CODE, SETTING_DEFAULT_UNIT];
+    if (options) {
+        for (var i = 0; i < keys.length; i++) {
+            if (keys[i] in options) {
+                movieService.store(keys[i], options[keys[i]]);
+            }
+        }
+    }
+    console.log("Options = " + JSON.stringify(options));
+});
+
+
+Pebble.addEventListener("showConfiguration", function() {
+    console.log("showing configuration");
+    var proxyUrl = movieService.proxy('settings', {}, null, null, true);
+    Pebble.openURL(proxyUrl);
+});
 
 
 function serializeData(data) {
