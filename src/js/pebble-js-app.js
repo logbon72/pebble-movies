@@ -89,8 +89,7 @@ var PBMovies = function(initDoneCallback) {
     };
 
     var locationSet = function() {
-        //console.log("Location is set" + JSON.stringify(locationInfo));
-        _initRegistration();
+        console.log("Location is set" + JSON.stringify(locationInfo));
     };
 
 
@@ -98,6 +97,7 @@ var PBMovies = function(initDoneCallback) {
         appConfig = service.get('appConfig');
         //var locationInfo = service.get('location', true);
         window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+        _initRegistration();
     };
 
     var _initRegistration = function() {
@@ -130,7 +130,7 @@ var PBMovies = function(initDoneCallback) {
         //console.log("Registration Done: Device ID : " + deviceId + " \nSecretKey: " + secretKey.substring(0, 10) + "...");
         //service.isReady = true;
         initDoneCallback();
-        setTimeout(preload, 2000);
+        setTimeout(preload, 500);
     };
 
     var preload = function() {
