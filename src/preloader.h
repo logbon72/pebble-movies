@@ -14,3 +14,4 @@ void preloader_stop();
 void preloader_set_hidden(Window *window);
 void preloader_set_loading();
 void preloader_set_timed_out();
+void preloader_set_no_connect();

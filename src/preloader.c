@@ -123,8 +123,13 @@ void preloader_set_loading() {
     preloader_set_status(LOADING_TEXT);
 }
 
+void preloader_set_no_connect() {
+    preloader_set_status("No BT Connection");
+    preloader_set_is_on(0);
+}
+
 void preloader_set_timed_out() {
-    preloader_set_is_on(1);
+    preloader_set_is_on(0);
     preloader_set_status(TIME_OUT);
 }
 

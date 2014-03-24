@@ -1,10 +1,10 @@
 {
     "uuid": "cf8b8759-8a8f-4182-8186-bd2d58edea35",
     "shortName": "Pebble Movies",
-    "longName": "Pebble Movies- Movie Showtimes on Pebble",
+    "longName": "PebbleMovies",
     "companyName": "Joseph Orilogbon",
     "versionCode": 1,
-    "versionLabel": "1.0.25",
+    "versionLabel": "1.0.28",
     "watchapp": {
         "watchface": false
     },

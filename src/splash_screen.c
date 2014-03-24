@@ -22,12 +22,21 @@ static void splash_screen_unload(Window *window);
 static void splash_send_init(void);
 static const char *LOADING_TEXT = "Loading...";
 
+static void splash_screen_no_bt() {
+    splash_screen_set_status_text("No BT connection");
+    splashScreen.loading = 0;
+}
+
 static void splash_screen_select_handler(ClickRecognizerRef recognizer, void *context) {
     if (!splashScreen.loading) {
         text_layer_set_text(splashScreen.statusText, LOADING_TEXT);
         //Tuplet * messages[] = {TupletInteger(APP_KEY_MSG_CODE, PB_MSG_OUT_INIT)};
-        splash_send_init();
-        splashScreen.loading = 1;
+        if (bluetooth_connection_service_peek()) {
+            splash_send_init();
+            splashScreen.loading = 1;
+        } else {
+            splash_screen_no_bt();
+        }
     }
 }
 
@@ -62,6 +71,9 @@ static void splash_screen_load(Window *window) {
     bitmap_layer_set_bitmap(splashScreen.imgLayer, splashScreen.img);
     layer_add_child(window_layer, bitmap_layer_get_layer(splashScreen.imgLayer));
     splashScreen.loading = 1;
+    if (!bluetooth_connection_service_peek()) {
+        splash_screen_no_bt();
+    }
 }
 
 static void splash_screen_unload(Window *window) {
@@ -108,6 +120,6 @@ void splash_screen_hide() {
     window_destroy(splashScreen.window);
 }
 
-void splash_screen_set_loading(uint8_t loading){
+void splash_screen_set_loading(uint8_t loading) {
     splashScreen.loading = loading;
 }

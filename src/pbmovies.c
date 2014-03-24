@@ -376,6 +376,12 @@ char *get_data_at(char* data, int row, int col, char dest[], int maxLength) {
 int send_message_with_string(uint8_t msgCode, uint8_t stringKey1, char *string1,
         uint8_t stringKey2, char *string2) {
 
+    if(!bluetooth_connection_service_peek()){
+        preloader_init();
+        preloader_set_no_connect();
+        return 0;
+    }
+    
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
     if (iter == NULL) {

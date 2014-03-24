@@ -44,6 +44,11 @@ static void home_screen_draw_header(GContext* ctx, const Layer *cell_layer, uint
 
 static void home_screen_select_handler(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
     // Use the row to specify which item will receive the select action
+    if(!bluetooth_connection_service_peek()){
+        preloader_init();
+        preloader_set_no_connect();
+        return;
+    }
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
     if (iter == NULL) {
