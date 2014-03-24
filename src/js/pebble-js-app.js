@@ -59,7 +59,7 @@ var pebbleMessagesOut = {
  * @returns {PBMovies.service}
  */
 var PBMovies = function(initDoneCallback) {
-    var locationInfo = {}, secretKey, deviceId, appConfig;
+    var locationInfo = {}, secretKey, deviceId;
     var locationOptions = {"timeout": LOCATION_TIMEOUT, "maximumAge": LOCATION_EXPIRY};
     var currentDate = dateYmd();
     var PostMethods = ["register"];
@@ -72,13 +72,13 @@ var PBMovies = function(initDoneCallback) {
         locationSet();
     };
 
+    var isset = function(str){
+        return str && (str.length)
+    };
 //called on error
     var locationError = function(err) {
         console.warn('location error (' + err.code + '): ' + err.message);
-        if (appConfig[SETTING_DEFAULT_COUNTRY] && (appConfig[SETTING_DEFAULT_CITY] || appConfig[SETTING_DEFAULT_POSTAL_CODE])) {
-            locationInfo.postalCode = appConfig[SETTING_DEFAULT_POSTAL_CODE];
-            locationInfo.city = appConfig[SETTING_DEFAULT_CITY];
-            locationInfo.country = appConfig[SETTING_DEFAULT_COUNTRY];
+        if (isset(locationInfo.postalCode) && (isset(locationInfo.city) || isset(locationInfo.postalCode))) {
             locationSet();
         } else {
             Pebble.sendAppMessage({
@@ -94,8 +94,10 @@ var PBMovies = function(initDoneCallback) {
 
 
     var init = function() {
-        appConfig = service.get('appConfig');
         //var locationInfo = service.get('location', true);
+        locationInfo.postalCode = service.get(SETTING_DEFAULT_POSTAL_CODE, false, "");
+        locationInfo.city = service.get(SETTING_DEFAULT_CITY, false, "");
+        locationInfo.country = service.get(SETTING_DEFAULT_COUNTRY, false, "");
         window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
         _initRegistration();
     };
@@ -136,7 +138,7 @@ var PBMovies = function(initDoneCallback) {
     var preload = function() {
         service.proxy('preload', null, function(data) {
             if (data.version && data.version > CURRENT_VERSION) {
-                var lastUpdateAlert = movieService.get("lastUpdateAlert", true, {
+                var lastUpdateAlert = service.get("lastUpdateAlert", true, {
                     'version': 0,
                     'time': 0
                 });
@@ -144,7 +146,7 @@ var PBMovies = function(initDoneCallback) {
                 if (lastUpdateAlert.version < data.version ||
                         currentTimeInMs() - lastUpdateAlert.time >= 86400000) {
                     Pebble.showSimpleNotificationOnPebble("Update Available", "A new version Pebble Movies has been published, visit Pebble App store to update!");
-                    movieService.store("lastUpdateAlert", {'version': data.version, 'time': currentTimeInMs()});
+                    service.store("lastUpdateAlert", {'version': data.version, 'time': currentTimeInMs()});
                 }
             }
 
@@ -607,9 +609,10 @@ Pebble.addEventListener("webviewclosed", function(e) {
 Pebble.addEventListener("showConfiguration", function() {
     console.log("showing configuration");
     var proxyUrl = movieService.proxy('settings', {
-        'unit': SETTING_DEFAULT_UNIT,
+        'unit': movieService.get(SETTING_DEFAULT_UNIT, false, SETTING_DEFAULT_UNIT),
         'version': CURRENT_VERSION
     }, null, null, true);
+    console.log("opening settings url: " + proxyUrl);
     Pebble.openURL(proxyUrl);
 });
 
