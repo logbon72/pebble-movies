@@ -141,6 +141,7 @@ void preloader_stop() {
 
 void preloader_set_hidden(Window* window){
     preloader_set_is_on(0);
-    window_stack_remove(preloader.window, true);
+    window_stack_remove(preloader.window, false);
+    window_destroy(preloader.window);
 }
 

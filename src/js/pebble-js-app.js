@@ -1,3 +1,4 @@
+var CURRENT_VERSION = 20140324.01;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -10,13 +11,13 @@ var SETTING_DEFAULT_UNIT = "DefaultUnit";
 
 var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
 
-var MIN_SPLASH_TIME = 2000;
-var MAX_DATA_LENGTH = 480;
+var MIN_SPLASH_TIME = 500;
+var MAX_DATA_LENGTH = 120;
 
 var DELIMETER_FIELD = "|";
 var DELIMETER_RECORD = "\t";
 
-var MAX_PAGES = 5;
+var MAX_PAGES = 20;
 var MSG_INTERVAL = 2000;
 
 var DISTANCE_UNIT_KM = "km";
@@ -129,11 +130,24 @@ var PBMovies = function(initDoneCallback) {
         //console.log("Registration Done: Device ID : " + deviceId + " \nSecretKey: " + secretKey.substring(0, 10) + "...");
         //service.isReady = true;
         initDoneCallback();
-        preload();
+        setTimeout(preload, 2000);
     };
 
     var preload = function() {
         service.proxy('preload', null, function(data) {
+            if (data.version && data.version > CURRENT_VERSION) {
+                var lastUpdateAlert = movieService.get("lastUpdateAlert", true, {
+                    'version': 0,
+                    'time': 0
+                });
+                //show alert ?
+                if (lastUpdateAlert.version < data.version ||
+                        currentTimeInMs() - lastUpdateAlert.time >= 86400000) {
+                    Pebble.showSimpleNotificationOnPebble("Update Available", "A new version Pebble Movies has been published, visit Pebble App store to update!");
+                    movieService.store("lastUpdateAlert", {'version': data.version, 'time': currentTimeInMs()});
+                }
+            }
+
             //console.log("data preloaded:" + JSON.stringify(data));
         }, function(xhr) {
             //console.log("Status: " + xhr.status + " Text: " + xhr.responseText);
@@ -258,6 +272,7 @@ var PBMovies = function(initDoneCallback) {
             //console.log("Out data" + JSON.stringify(outData));
             Pebble.sendAppMessage(outData, function(e) {
                 retries = 0;
+                console.log("Delivered");
                 if (currentPage < totalPages && currentPage < MAX_PAGES) {
                     messageHandler.sendData(msgCode, data, ++currentPage, raw, retries);
                 }
@@ -265,6 +280,7 @@ var PBMovies = function(initDoneCallback) {
             }, function(e) {
 
                 if (retries++ < 3) {
+                    console.log("Retrying... [" + retries + "] previous failed: " + JSON.stringify(e));
                     messageHandler.sendData(msgCode, data, ++currentPage, raw, retries);
                 } else {
                     console.log("Failed...");
@@ -406,7 +422,7 @@ var PBMovies = function(initDoneCallback) {
             if (urlOnly) {
                 return url;
             }
-            //console.log("Making proxy command: " + command + " Method");
+            console.log("Making proxy command for- " + command.toUpperCase() + " Method");
             ///console.log("URL: " + url);
             return makeRequest(url, method, reqData, successCallback, errorCallback);
         },
@@ -426,10 +442,13 @@ var PBMovies = function(initDoneCallback) {
             if (service.isStored(k)) {
                 var cached = service.get(k, true);
                 if (ignoreExpiry || cached.expiry > currentTimeInMs()) {
+                    console.log("Cache HIT");
                     return cached.data;
-                } else {
-                    service.unStore(k);
                 }
+//                else {
+//                    console.log("Cache HIT");
+//                    service.unStore(k);
+//                }
             }
             return null;
         },
@@ -534,16 +553,23 @@ var PBMovies = function(initDoneCallback) {
  * @type PBMovies.service
  */
 var movieService;
-var initFunction = function() {
-    var timeSinceLaunch, timeStarted = currentTimeInMs();
+var initFunction = function(sends) {
+    //var timeSinceLaunch, timeStarted = currentTimeInMs();
+    sends = sends || 1;
     movieService = new PBMovies(function() {
-        timeSinceLaunch = currentTimeInMs() - timeStarted;
+        //timeSinceLaunch = currentTimeInMs() - timeStarted;
         setTimeout(function() {
-            //console.log("calling off splash screen");//
             Pebble.sendAppMessage({
                 "code": pebbleMessagesIn.startApp
+            }, function(e) {
+                console.log("App started!");
+            }, function(e) {
+                console.log("Init failed: ");
+                if (sends++ < 4) {
+                    initFunction(sends);
+                }
             });
-        }, timeSinceLaunch >= MIN_SPLASH_TIME ? 10 : (MIN_SPLASH_TIME - timeSinceLaunch) + 10);
+        }, MIN_SPLASH_TIME)
     });
 };
 
@@ -580,7 +606,10 @@ Pebble.addEventListener("webviewclosed", function(e) {
 
 Pebble.addEventListener("showConfiguration", function() {
     console.log("showing configuration");
-    var proxyUrl = movieService.proxy('settings', {}, null, null, true);
+    var proxyUrl = movieService.proxy('settings', {
+        'unit': SETTING_DEFAULT_UNIT,
+        'version': CURRENT_VERSION
+    }, null, null, true);
     Pebble.openURL(proxyUrl);
 });
 
@@ -708,7 +737,7 @@ function downloadBinaryResource(imageURL, callback, errorCallback) {
  * @returns {undefined}
  */
 var makeRequest = function(url, method, data, successHandler, errorHandler) {
-    var response;
+    var response, startTime = currentTimeInMs();
     var xhr = new XMLHttpRequest();
     xhr.open(method || 'GET', url, true);
     data = data ? serializeData(data) : null;
@@ -722,6 +751,8 @@ var makeRequest = function(url, method, data, successHandler, errorHandler) {
 
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState === 4) {
+            console.log("Request completed in " + (currentTimeInMs() - startTime) + "ms");
+            console.log("HTTP Status: " + xhr.status);
             if (xhr.status === 200) {
                 //console.log(xhr.responseText);
                 if (successHandler) {

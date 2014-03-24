@@ -15,7 +15,7 @@ static const char* sectionHeader = "Available Showtimes";
 #define SHOWTIME_CAN_BUY '1'
 #define SHOWTIME_CANT_BUY '0'
 
-#define MAX_SHOWTIMES_COUNT 25
+#define MAX_SHOWTIMES_COUNT 30
 
 #define SHOWTIME_FLD_LENGTH_ID 8
 #define SHOWTIME_FLD_LENGTH_TYPE 2
@@ -34,7 +34,7 @@ struct Showtime {
     char link[SHOWTIME_FLD_LENGTH_LINK];
 };
 
-static struct Showtime showtimes[MAX_SHOWTIMES_COUNT];
+//static struct Showtime showtimes[MAX_SHOWTIMES_COUNT];
 
 static struct ShowtimesUIScreen {
     Window* window;
@@ -44,6 +44,20 @@ static struct ShowtimesUIScreen {
     uint8_t total;
 
 } showtimesUI;
+
+static struct Showtime get_showtime_at(uint8_t row) {
+    struct Showtime showtime;
+    get_data_at(SHOWTIMES_LIST, row, SHOWTIME_FLD_IDX_ID,
+            showtime.id, SHOWTIME_FLD_LENGTH_ID);
+    get_data_at(SHOWTIMES_LIST, row, SHOWTIME_FLD_IDX_LINK,
+            showtime.link, SHOWTIME_FLD_LENGTH_LINK);
+    get_data_at(SHOWTIMES_LIST, row, SHOWTIME_FLD_IDX_TIME,
+            showtime.time, SHOWTIME_FLD_LENGTH_TIME);
+    get_data_at(SHOWTIMES_LIST, row, SHOWTIME_FLD_IDX_TYPE,
+            showtime.type, SHOWTIME_FLD_LENGTH_TYPE);
+
+    return showtime;
+}
 
 static uint16_t menu_num_sections(MenuLayer *menu_layer, void *data) {
     return 1;
@@ -65,26 +79,29 @@ static void menu_draw_header(GContext* ctx, const Layer *cell_layer, uint16_t se
 
 static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *ci, void *data) {
     const char *showtimeType;
-    if (showtimes[ci->row].type[0] == SHOWTIME_TYPE_3D) {
+    struct Showtime showtime = get_showtime_at(ci->row);
+    if (showtime.type[0] == SHOWTIME_TYPE_3D) {
         showtimeType = typeDigital3D;
-    } else if (showtimes[ci->row].type[0] == SHOWTIME_TYPE_IMAX) {
+    } else if (showtime.type[0] == SHOWTIME_TYPE_IMAX) {
         showtimeType = typeIMAX;
     } else {
         showtimeType = typeDigital;
     }
 
-    GBitmap *icon = showtimes[ci->row].link[0] == SHOWTIME_CAN_BUY ? showtimesUI.canBuyIcon :
+    GBitmap *icon = showtime.link[0] == SHOWTIME_CAN_BUY ? showtimesUI.canBuyIcon :
             showtimesUI.cantBuyIcon;
 
 
-    menu_cell_basic_draw(ctx, cell_layer, showtimes[ci->row].time, showtimeType, icon);
+    menu_cell_basic_draw(ctx, cell_layer, showtime.time, showtimeType, icon);
 }
 
 static void menu_select_handler(MenuLayer *menu_layer, MenuIndex *ci, void *data) {
     // Use the row to specify which item will receive the select action
-    if (showtimes[ci->row].link[0] == SHOWTIME_CAN_BUY) {
+    struct Showtime showtime = get_showtime_at(ci->row);
+
+    if (showtime.link[0] == SHOWTIME_CAN_BUY) {
         if (send_message_with_string(PB_MSG_OUT_GET_QR_CODE,
-                APP_KEY_SHOWTIME_ID, showtimes[ci->row].id, 0, NULL)) {
+                APP_KEY_SHOWTIME_ID, showtime.id, 0, NULL)) {
             preloader_init();
         }
     }
@@ -129,12 +146,12 @@ void showtimes_init() {
         showtimesUI.total = MAX_SHOWTIMES_COUNT;
     }
 
-    for (uint8_t i = 0; i < showtimesUI.total; i++) {
-        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_ID, showtimes[i].id, SHOWTIME_FLD_LENGTH_ID);
-        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_LINK, showtimes[i].link, SHOWTIME_FLD_LENGTH_LINK);
-        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_TIME, showtimes[i].time, SHOWTIME_FLD_LENGTH_TIME);
-        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_TYPE, showtimes[i].type, SHOWTIME_FLD_LENGTH_TYPE);
-    }
+    //    for (uint8_t i = 0; i < showtimesUI.total; i++) {
+    //        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_ID, showtimes[i].id, SHOWTIME_FLD_LENGTH_ID);
+    //        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_LINK, showtimes[i].link, SHOWTIME_FLD_LENGTH_LINK);
+    //        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_TIME, showtimes[i].time, SHOWTIME_FLD_LENGTH_TIME);
+    //        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_TYPE, showtimes[i].type, SHOWTIME_FLD_LENGTH_TYPE);
+    //    }
 
 
     showtimesUI.canBuyIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_CAN_BUY);

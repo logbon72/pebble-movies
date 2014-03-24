@@ -9,7 +9,7 @@
 #include "qrcode.h"
 
 #define MSG_CODE_NO_WAIT 0xff
-#define JS_DATA_PER_SEND 480
+#define JS_DATA_PER_SEND 120
 
 static void handle_start_app(void);
 static void handle_init_failed(char *message);
@@ -20,20 +20,20 @@ static void close_wait(void *);
 static char *messageBuffer;
 static uint8_t *bytesBuffer;
 AppTimer *inboxWaitTimer;
-uint8_t currentWaiter = MSG_CODE_NO_WAIT;
+//uint8_t currentWaiter = MSG_CODE_NO_WAIT;
 //char **dataRecords;
 uint8_t lastPage = 0;
 static int totalDataReceived = 0;
 
-static void close_wait(void *context) {
-    if (currentWaiter == MSG_CODE_NO_WAIT) {
-        handle_data_received(currentWaiter, 0, 0, NULL);
-    }
-
-    if (inboxWaitTimer) {
-        app_timer_cancel(inboxWaitTimer);
-    }
-}
+//static void close_wait(void *context) {
+//    if (currentWaiter == MSG_CODE_NO_WAIT) {
+//        handle_data_received(currentWaiter, 0, 0, NULL);
+//    }
+//
+//    if (inboxWaitTimer) {
+//        app_timer_cancel(inboxWaitTimer);
+//    }
+//}
 
 static void reset_message_receiver() {
     messageBuffer = NULL;
@@ -42,18 +42,18 @@ static void reset_message_receiver() {
     if (inboxWaitTimer) {
         app_timer_cancel(inboxWaitTimer);
     }
-    currentWaiter = MSG_CODE_NO_WAIT;
+    //currentWaiter = MSG_CODE_NO_WAIT;
 }
 
 static void handle_data_received(uint8_t msgCode, uint8_t page,
         uint8_t totalPages, Tuple *tuple) {
 
     //APP_LOG(APP_LOG_LEVEL_INFO, "Received data Length: %d, Page %d of %d", dataLength, page, totalPages);
-    if (page != 1 && page != totalPages && !(currentWaiter || currentWaiter != msgCode)) {
-        //APP_LOG(APP_LOG_LEVEL_INFO, "Message discarded");
-        //reset_mssage_receiver();
-        return;
-    }
+    //    if (page != 1 && page != totalPages && !(currentWaiter || currentWaiter != msgCode)) {
+    //        //APP_LOG(APP_LOG_LEVEL_INFO, "Message discarded");
+    //        //reset_mssage_receiver();
+    //        return;
+    //    }
 
     if (!tuple || page != lastPage + 1) {
         //APP_LOG(APP_LOG_LEVEL_WARNING, "Message broken");
@@ -94,11 +94,6 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
     }
 
 
-    uint16_t tracker = 0;
-
-
-    //uint8_t rawChar = tuple->value->data;
-
     //if terminating with null, then fail
     if (stringDataMode) {
         char *data = tuple->value->cstring;
@@ -114,11 +109,14 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
         totalDataReceived += tuple->length;
     }
 
-    
-    if (inboxWaitTimer) {
-        app_timer_cancel(inboxWaitTimer);
-        inboxWaitTimer = NULL;
-    }
+
+    //    if (inboxWaitTimer) {
+    //        app_timer_cancel(inboxWaitTimer);
+    //        inboxWaitTimer = NULL;
+    //    }
+    //free(tuple->value->data);
+    //free(tuple->value);
+
 
     if (page == totalPages) {
         if (stringDataMode && messageBuffer) {
@@ -164,12 +162,13 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
                 //default:
                 //APP_LOG(APP_LOG_LEVEL_DEBUG, "Message Code %d needs no handling", msgCode);
         }
-    } else {
-        //some more messages expected, wait
-        currentWaiter = msgCode;
-        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting timer...");
-        inboxWaitTimer = app_timer_register(MSG_INTERVAL_WAIT_MS, close_wait, NULL);
     }
+    //  else {
+    //        //some more messages expected, wait
+    //        currentWaiter = msgCode;
+    //        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting timer...");
+    //        inboxWaitTimer = app_timer_register(MSG_INTERVAL_WAIT_MS, close_wait, NULL);
+    //    }
 
 }
 
@@ -212,24 +211,24 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
     }
 }
 
-//static void in_dropped_handler(AppMessageResult reason, void *context) {
-//    //APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped! Reason: %d ", reason);
-//}
-//
-//static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
-//    //APP_LOG(APP_LOG_LEVEL_DEBUG, "AppMessageSendFailed! Reason : %d ", reason);
-//}
+static void in_dropped_handler(AppMessageResult reason, void *context) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped! Reason: %d ", reason);
+}
+
+static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "AppMessageSendFailed! Reason : %d ", reason);
+}
 
 void app_message_init() {
     // Register message handlers
     app_message_register_inbox_received(in_received_handler);
-    //    app_message_register_inbox_dropped(in_dropped_handler);
-    //    app_message_register_outbox_failed(out_failed_handler);
-    // Init buffers
+    app_message_register_inbox_dropped(in_dropped_handler);
+    app_message_register_outbox_failed(out_failed_handler);
+    //Init buffers
     app_message_open(PB_INBOX_SIZE, PB_OUTBOX_SIZE);
     //fetch_msg();
-    //uint32_t needed= dict_calc_buffer_size(3, sizeof (uint8_t), sizeof (uint8_t), 500 * sizeof (char*));
-    //APP_LOG(APP_LOG_LEVEL_INFO, "Needed Inbox %lu, available: %lu", needed, app_message_inbox_size_maximum());
+    //    uint32_t needed= dict_calc_buffer_size(3, sizeof (uint8_t), sizeof (uint8_t), 128 * sizeof (char*));
+    //    APP_LOG(APP_LOG_LEVEL_INFO, "Needed Inbox %lu, available: %lu", needed, app_message_inbox_size_maximum());
 }
 
 static void handle_init_failed(char *message) {
