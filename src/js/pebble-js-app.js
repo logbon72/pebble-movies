@@ -13,19 +13,23 @@ var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
 //var PROXY_SERVICE_URL = "http://192.168.42.186/pbmovies/proxy/";
 
 var MIN_SPLASH_TIME = 500;
-var MAX_DATA_LENGTH = 120;
+var MAX_DATA_LENGTH = 240;
 
 var DELIMETER_FIELD = "|";
 var DELIMETER_RECORD = "\t";
 
-var MAX_PAGES = 20;
+var MAX_PAGES = 10;
 
 var DISTANCE_UNIT_KM = "km";
 var DISTANCE_UNIT_MILES = "mi";
 var DISTANCE_MILE_IN_M = 0.000621371;
 var DISTANCE_KM_IN_M = 0.001;
-var PRELOAD_KEY = "preloadData";
+
 var PRELOAD_WAIT_TIME = 2000;
+
+var KEY_PRELOAD = "preloadData121";
+var KEY_DEVICE_ID = "deviceId";
+var KEY_SECRET_KEY = "secretKey";
 
 var showtimeTypeMask = {
     'digital': 0,
@@ -106,8 +110,8 @@ var PBMovies = function(initDoneCallback) {
     };
 
     var _initRegistration = function() {
-        secretKey = service.get('secretKey');
-        deviceId = service.get('deviceId');
+        secretKey = service.get(KEY_SECRET_KEY);
+        deviceId = service.get(KEY_DEVICE_ID);
         if (!secretKey || !deviceId) {
             register();
         } else {
@@ -119,8 +123,8 @@ var PBMovies = function(initDoneCallback) {
         var deviceUUID = Pebble.getAccountToken();
         //console.log("UUID: " + deviceUUID);
         service.proxy('register', {'device_uuid': deviceUUID}, function(resp) {
-            service.store('secretKey', secretKey = resp.device.secret_key);
-            service.store('deviceId', deviceId = resp.device.id);
+            service.store(KEY_SECRET_KEY, secretKey = resp.device.secret_key);
+            service.store(KEY_DEVICE_ID, deviceId = resp.device.id);
             registerDone();
         }, function(xhr) {
             //console.log("Response: " + xhr.responseText);
@@ -134,38 +138,47 @@ var PBMovies = function(initDoneCallback) {
     var registerDone = function() {
         //console.log("Registration Done: Device ID : " + deviceId + " \nSecretKey: " + secretKey.substring(0, 10) + "...");
         //service.isReady = true;
+        console.log("Registered: " + deviceId);
         initDoneCallback();
-        setTimeout(preload, 500);
+        setTimeout(preload, 2000);
     };
 
     var preloadRetries = 0;
     var preload = function(loadCb, errorCb) {
-        var cachedData = service.isCached(PRELOAD_KEY);
+        var cachedData = service.isCached(KEY_PRELOAD);
         var preloadFailed = function(xhr) {
             isPreloading = false;
-            if (preloadRetries++ < 3) {
+            if (++preloadRetries > 3) {
                 preloadRetries = 0;
                 if (errorCb) {
                     errorCb();
                 }
+            } else {
+                setTimeout(function(){
+                    preload(loadCb, errorCb);
+                }, PRELOAD_WAIT_TIME);
             }
             console.log(xhr.responseText);
         };
         if (!cachedData && !isPreloading) {
             isPreloading = true;
-            service.proxy('preload11', {'tries': preloadRetries}, function(data) {
-                service.cache(PRELOAD_KEY, data.data);
+            service.proxy('preload11', {'tries': preloadRetries},
+            function(response) {
+                if (response.data && typeof response.data === "object") {
+                    //console.log("Cachhing data");
+                    service.cache(KEY_PRELOAD, response.data);
+                }
                 //alert
-                if (data.version && data.version > CURRENT_VERSION) {
+                if (response.version && response.version > CURRENT_VERSION) {
                     var lastUpdateAlert = service.get("lastUpdateAlert", true, {
                         'version': 0,
                         'time': 0
                     });
                     //show alert ?
-                    if (lastUpdateAlert.version < data.version ||
+                    if (lastUpdateAlert.version < response.version ||
                             currentTimeInMs() - lastUpdateAlert.time >= 86400000) {
                         Pebble.showSimpleNotificationOnPebble("Update Available", "A new version Pebble Movies has been published, visit Pebble App store to update!");
-                        service.store("lastUpdateAlert", {'version': data.version, 'time': currentTimeInMs()});
+                        service.store("lastUpdateAlert", {'version': response.version, 'time': currentTimeInMs()});
                     }
                 }
                 //set preloading
@@ -211,7 +224,7 @@ var PBMovies = function(initDoneCallback) {
             messageHandler.checkPreloaded(function(data) {
                 var movies = data.movies;
                 if (movies && movies.length > 0) {
-                    messageHandler.sendData(pebbleMessagesIn.movies, movieUtils.convertToData(movies));
+                    messageHandler.sendData(pebbleMessagesIn.movies, movieUtils.convertToData(movies), 1, 0, 0);
                 } else {
                     messageHandler.sendNoData("No movies at the moment");
                 }
@@ -252,9 +265,9 @@ var PBMovies = function(initDoneCallback) {
             });
         },
         checkPreloaded: function(callback) {
-            var data = service.isCached(PRELOAD_KEY);
+            var data = service.isCached(KEY_PRELOAD);
             if (isPreloading) {//if preloading, then wait
-                setTimeout(function(){
+                setTimeout(function() {
                     messageHandler.checkPreloaded(callback);
                 }, PRELOAD_WAIT_TIME);
             } else if (!data) {//not preloading, and no data, try to preload
@@ -268,7 +281,7 @@ var PBMovies = function(initDoneCallback) {
         getShowtimes: function(dataIn) {
             messageHandler.checkPreloaded(function(data) {
                 var key = dataIn.theatreId + "." + dataIn.movieId;
-                console.log("Showtime Key: "+key);
+                //console.log("Showtime Key: " + key);
                 var showtimes = data.showtimes ? data.showtimes[key] : [];
                 showtimeUtils.processShowtimes(showtimes || []);
             });
@@ -310,9 +323,9 @@ var PBMovies = function(initDoneCallback) {
         },
         sendData: function(msgCode, data, currentPage, raw, retries) {
             lastPbMsgIn = msgCode;
-            if (!raw && data.match(/[^\x00-\x7F]/g)) {
-                data = data.replace(/[^\x00-\x7F]/g, "*");
-            }
+//            if (!raw && data.match(/[^\x00-\x7F]/g)) {
+//                data = data.replace(/[^\x00-\x7F]/g, "*");
+//            }
 
             if (!retries) {
                 retries = 0;
@@ -372,17 +385,17 @@ var PBMovies = function(initDoneCallback) {
 //            return showtimeUtils.processShowtime([]);
 //        },
         processShowtimes: function(showtimes) {
-            var records = [], notPast;
-            
+            var records = [];
+
             for (var i = 0; i < showtimes.length; i++) {
                 var showtime = [];
                 //var hasUrl = showtimes[i].url && showtimes[i].url.length ? 1 : 0;
                 var time = showtimeUtils.formatTime(currentDate, showtimes[i].show_time);
-                notPast = new Date(currentDate + " "+showtimes[i].show_time).getTime() > currentTimeInMs();
+                //notPast = new Date(currentDate + " " + showtimes[i].show_time).getTime() > currentTimeInMs();
                 showtime.push(showtimes[i].id);
                 showtime.push(showtimeTypeMask[showtimes[i].type]);
                 showtime.push(time);
-                showtime.push(notPast && showtimes[i].link ? 1 : 0);
+                showtime.push(showtimes[i].link ? 1 : 0);
 //14579
                 records.push(showtime.join(DELIMETER_FIELD));
             }
@@ -443,12 +456,17 @@ var PBMovies = function(initDoneCallback) {
             var movie, records = [];
             for (var i = 0; i < movies.length; i++) {
                 //id,title,genre,user_rating,rated,critic_rating,runtime                    
-                movie = objectValues(movies[i]);
-                movie[2] = movie[2] || " ";
-                movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
-                movie[4] = (!movie[4] || !movie[4].trim().length) ? "NR" : movie[4];
-                movie[4] = movie[4].replace(/Not Rated/i, "NR");
-                movie[5] = Math.min(Math.round(parseFloat(movie[5]) * 100), 99);
+                try {
+                    movie = objectValues(movies[i]);
+                    movie[2] = movie[2] || " ";
+                    movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
+                    movie[4] = movie[4] ? movie[4] + "" : "NR";
+                    movie[4] = !movie[4].trim().length ? "NR" : movie[4];
+                    movie[4] = movie[4].replace(/(Not Rated)|(Unrated)/i, "NR");
+                    movie[5] = Math.min(Math.round(parseFloat(movie[5]) * 100), 99);
+                } catch (e) {
+                    console.log("Error " + movie[4] + "__" + e.message);
+                }
                 records.push(movie.join(DELIMETER_FIELD));
             }
 
@@ -476,7 +494,7 @@ var PBMovies = function(initDoneCallback) {
             var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
             var urlData = {token: service.signRequest(), 'date': currentDate};
             for (i in locationInfo) {
-                if (locationInfo.hasOwnProperty(i)) {
+                if (locationInfo.hasOwnProperty(i) && locationInfo[i]) {
                     urlData[i] = locationInfo[i];
                 }
             }
@@ -489,7 +507,7 @@ var PBMovies = function(initDoneCallback) {
                 return url;
             }
             console.log("Making proxy command for- " + command.toUpperCase() + " Method");
-            ///console.log("URL: " + url);
+            //console.log("URL: " + url);
             return makeRequest(url, method, reqData, successCallback, errorCallback);
         },
         signRequest: function() {
@@ -597,7 +615,7 @@ var PBMovies = function(initDoneCallback) {
             for (var i in pebbleMessagesOut) {
                 if (pebbleMessagesOut[i] === msgCode) {
                     if (messageHandler.hasOwnProperty(i)) {
-                        console.log("Handler found ");
+                        //console.log("Handler found ");
                         return messageHandler[i](payload);
                     } else {
                         console.log("Message handler does not have method for: " + i);
@@ -662,7 +680,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
     var keys = [SETTING_DEFAULT_CITY, SETTING_DEFAULT_COUNTRY, SETTING_DEFAULT_POSTAL_CODE, SETTING_DEFAULT_UNIT];
     if (options) {
         for (var i = 0; i < keys.length; i++) {
-            if (keys[i] in options) {
+            if (keys[i] in options && options[keys[i]]) {
                 movieService.store(keys[i], options[keys[i]]);
             }
         }
@@ -674,7 +692,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
 Pebble.addEventListener("showConfiguration", function() {
     console.log("showing configuration");
     var proxyUrl = movieService.proxy('settings', {
-        'unit': movieService.get(SETTING_DEFAULT_UNIT, false, SETTING_DEFAULT_UNIT),
+        'unit': movieService.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM),
         'version': CURRENT_VERSION
     }, null, null, true);
     console.log("opening settings url: " + proxyUrl);

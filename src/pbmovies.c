@@ -9,7 +9,7 @@
 #include "qrcode.h"
 
 #define MSG_CODE_NO_WAIT 0xff
-#define JS_DATA_PER_SEND 120
+#define JS_DATA_PER_SEND 240
 
 static void handle_start_app(void);
 static void handle_init_failed(char *message);

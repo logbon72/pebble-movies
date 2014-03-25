@@ -5,7 +5,10 @@
 #define MAX_NUM_CIRCLES 9
 #define RADIUS_INC 3
 #define RADIUS_INITIAL 3
-#define ANIMATION_TIMEOUT 100
+#define RECT_WIDTH 15
+#define RECT_GAP 5
+#define RECT_COUNT 4
+#define ANIMATION_TIMEOUT 200
 
 static Layer *square_layer;
 static GBitmap *statusBarIcon;
@@ -23,20 +26,22 @@ static struct PreloaderScreen {
 // Timers can be canceled with `app_timer_cancel()`
 //static AppTimer *timer;
 
-static int circleCount = 1;
+static int animCount = 1;
 
 static void update_square_layer(Layer *layer, GContext* ctx) {
 
     graphics_context_set_stroke_color(ctx, GColorWhite);
-    for (int i = 0; i < circleCount; i++) {
-        graphics_draw_circle(ctx, GPoint(70, 50), RADIUS_INITIAL + (i * RADIUS_INC));
+    GRect bounds = layer_get_bounds(layer);
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    for (uint8_t i = 0; i < animCount; i++) {
+        //graphics_draw_circle(ctx, GPoint(70, 50), RADIUS_INITIAL + (i * RADIUS_INC));
+        uint8_t x = bounds.origin.x + (i - 1)* (RECT_GAP + RECT_WIDTH);
+        graphics_fill_rect(ctx, GRect(x, bounds.origin.y, RECT_WIDTH, bounds.size.h), 5, GCornersAll);
     }
 
-    if (++circleCount > MAX_NUM_CIRCLES) {
-        circleCount = 1;
+    if (++animCount > RECT_COUNT) {
+        animCount = 1;
     }
-    //graphics_context_set_fill_color(ctx, GColorBlack);
-    //gpath_draw_outline(ctx, square_path);
 }
 
 static void timer_callback(void *context) {
@@ -64,13 +69,13 @@ static void unload(Window *w) {
 
 static void preloader_appear(Window *window) {
     const uint32_t timeout_ms = ANIMATION_TIMEOUT;
-    if(preloader.isOn){
+    if (preloader.isOn) {
         preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
     }
-//    else{
-//        preloader.timer = app_timer_register(timeout_ms, pop_preloader, NULL);
-//    }
-    
+    //    else{
+    //        preloader.timer = app_timer_register(timeout_ms, pop_preloader, NULL);
+    //    }
+
 }
 
 static void preloader_load(Window *window) {
@@ -83,12 +88,12 @@ static void preloader_load(Window *window) {
     }
 
     GRect bounds = layer_get_bounds(window_layer);
-    square_layer = layer_create(bounds);
+    square_layer = layer_create(GRect(40, 50, bounds.size.w - 50, 20));
     layer_set_update_proc(square_layer, update_square_layer);
     layer_add_child(window_layer, square_layer);
 
     preloader.statusText = text_layer_create(GRect(0, 80, bounds.size.w, bounds.size.h - 110));
-    
+
     text_layer_set_background_color(preloader.statusText, GColorClear);
     text_layer_set_text_color(preloader.statusText, GColorWhite);
     text_layer_set_text_alignment(preloader.statusText, GTextAlignmentCenter);
@@ -144,7 +149,7 @@ void preloader_stop() {
     // }
 }
 
-void preloader_set_hidden(Window* window){
+void preloader_set_hidden(Window* window) {
     preloader_set_is_on(0);
     window_stack_remove(preloader.window, false);
     window_destroy(preloader.window);
