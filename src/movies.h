@@ -31,7 +31,7 @@ struct MovieRecord {
     char criticRating[MOVIE_FLD_LENGTH_CRITC_RATING];
     char runtime[MOVIE_FLD_LENGTH_RUNTIME];
     char rated[MOVIE_FLD_LENGTH_RATED];
-} currentMovie;
+} movie;
 
 char MOVIES_LIST[2408];
 

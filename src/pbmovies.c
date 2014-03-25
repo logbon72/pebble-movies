@@ -16,12 +16,9 @@ static void handle_init_failed(char *message);
 static void handle_data_received(uint8_t, uint8_t, uint8_t, Tuple *);
 static void close_wait(void *);
 
-//static const char *blankStr = "";
 static char *messageBuffer;
 static uint8_t *bytesBuffer;
 AppTimer *inboxWaitTimer;
-//uint8_t currentWaiter = MSG_CODE_NO_WAIT;
-//char **dataRecords;
 uint8_t lastPage = 0;
 static int totalDataReceived = 0;
 
@@ -136,7 +133,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
 
             case PB_MSG_IN_MOVIE_THEATRES:
                 //APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", strlen(THEATRES_LIST));
-                theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeMovieThetares, currentMovie.id);
+                theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeMovieThetares, movie.id);
                 break;
 
             case PB_MSG_IN_MOVIES:
@@ -212,11 +209,11 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 }
 
 static void in_dropped_handler(AppMessageResult reason, void *context) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped! Reason: %d ", reason);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "MsgDropped_%d", reason);
 }
 
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "AppMessageSendFailed! Reason : %d ", reason);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "MsgSendFailed_%d", reason);
 }
 
 void app_message_init() {
@@ -404,9 +401,9 @@ int send_message_with_string(uint8_t msgCode, uint8_t stringKey1, char *string1,
 }
 
 void load_showtimes_for_movie_theatre() {
-    if (currentMovie.id && currentTheatre.id) {
+    if (movie.id && currentTheatre.id) {
         int result = send_message_with_string(PB_MSG_OUT_GET_SHOWTIMES, APP_KEY_THEATRE_ID, currentTheatre.id
-                , APP_KEY_MOVIE_ID, currentMovie.id);
+                , APP_KEY_MOVIE_ID, movie.id);
         if (result) {
             preloader_init();
         }

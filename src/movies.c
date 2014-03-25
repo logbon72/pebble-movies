@@ -33,6 +33,15 @@ static struct MovieUIScreen {
     enum MovieUIMode currentMode;
 } moviesUI;
 
+static void set_movie_at_index(uint8_t movieIndex) {
+    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_ID, movie.id, MOVIE_FLD_LENGTH_ID);
+    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_TITLE, movie.title, MOVIE_FLD_LENGTH_TITLE);
+    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_GENRE, movie.genre, MOVIE_FLD_LENGTH_GENRE);
+    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_CRITC_RATING, movie.criticRating, MOVIE_FLD_LENGTH_CRITC_RATING);
+    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_USER_RATING, movie.userRating, MOVIE_FLD_LENGTH_USER_RATING);
+    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_RUNTIME, movie.runtime, MOVIE_FLD_LENGTH_RUNTIME);
+    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_RATED, movie.rated, MOVIE_FLD_LENGTH_RATED);
+}
 
 static void set_current(uint8_t movieIndex) {
     if (movieIndex >= moviesUI.total) {
@@ -53,32 +62,23 @@ static void set_current(uint8_t movieIndex) {
     } else {
         action_bar_layer_clear_icon(moviesUI.actionBar, BUTTON_ID_DOWN);
     }
-
-
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_ID, currentMovie.id, MOVIE_FLD_LENGTH_ID);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_TITLE, currentMovie.title, MOVIE_FLD_LENGTH_TITLE);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_GENRE, currentMovie.genre, MOVIE_FLD_LENGTH_GENRE);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_CRITC_RATING, currentMovie.criticRating, MOVIE_FLD_LENGTH_CRITC_RATING);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_USER_RATING, currentMovie.userRating, MOVIE_FLD_LENGTH_USER_RATING);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_RUNTIME, currentMovie.runtime, MOVIE_FLD_LENGTH_RUNTIME);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_RATED, currentMovie.rated, MOVIE_FLD_LENGTH_RATED);
-
-
-    text_layer_set_text(moviesUI.titleTxt, currentMovie.title);
-    text_layer_set_text(moviesUI.genreTxt, currentMovie.genre);
-    text_layer_set_text(moviesUI.criticRatingTxt, currentMovie.criticRating);
-    text_layer_set_text(moviesUI.userRatingTxt, currentMovie.userRating);
-    text_layer_set_text(moviesUI.runtimeTxt, currentMovie.runtime);
-    text_layer_set_text(moviesUI.ratedTxt, currentMovie.rated);
+    
+    set_movie_at_index(movieIndex);
+    text_layer_set_text(moviesUI.titleTxt, movie.title);
+    text_layer_set_text(moviesUI.genreTxt, movie.genre);
+    text_layer_set_text(moviesUI.criticRatingTxt, movie.criticRating);
+    text_layer_set_text(moviesUI.userRatingTxt, movie.userRating);
+    text_layer_set_text(moviesUI.runtimeTxt, movie.runtime);
+    text_layer_set_text(moviesUI.ratedTxt, movie.rated);
 
     //APP_LOG(APP_LOG_LEVEL_INFO, "Critic Rating: %s", currentMovie.criticRating);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-    if (currentMovie.id) {
+    if (movie.id) {
         if (moviesUI.currentMode == MovieUIModeMovies) {
             //APP_LOG(APP_LOG_LEVEL_DEBUG, "Next, get movie theatres for movie ID: %s", currentMovie.id);
-            if (send_message_with_string(PB_MSG_OUT_GET_MOVIE_THEATRES, APP_KEY_MOVIE_ID, currentMovie.id, 0, NULL)) {
+            if (send_message_with_string(PB_MSG_OUT_GET_MOVIE_THEATRES, APP_KEY_MOVIE_ID, movie.id, 0, NULL)) {
                 preloader_init();
             }
         } else {

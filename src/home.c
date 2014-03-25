@@ -14,7 +14,6 @@ static struct HomeScreen {
 #define HOME_MENU_SECTIONS 1
 #define HOME_MENU_ROWS 2
 
-
 static uint16_t home_screen_num_sections(MenuLayer *menu_layer, void *data) {
     return HOME_MENU_SECTIONS;
 }
@@ -44,7 +43,7 @@ static void home_screen_draw_header(GContext* ctx, const Layer *cell_layer, uint
 
 static void home_screen_select_handler(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
     // Use the row to specify which item will receive the select action
-    if(!bluetooth_connection_service_peek()){
+    if (!bluetooth_connection_service_peek()) {
         preloader_init();
         preloader_set_no_connect();
         return;
@@ -119,5 +118,8 @@ void home_screen_init(void) {
     window_stack_push(homeScreen.window, animated);
 }
 
-
-
+void home_screen_deinit() {
+    if (homeScreen.window) {
+        window_destroy(homeScreen.window);
+    }
+}

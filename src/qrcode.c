@@ -10,8 +10,6 @@ static struct QrCodeScreen {
     GBitmap *qrCode;
 } qrCodeScreen;
 
-//static const char *screenTitle = ;
-
 static void screen_load(Window *window) {
 
     window_set_fullscreen(window, true);
@@ -34,7 +32,7 @@ static void screen_load(Window *window) {
 
 }
 
-static void screen_unload(Window *windo) {
+static void screen_unload() {
     bitmap_layer_destroy(qrCodeScreen.qrCodeLayer);
     gbitmap_destroy(qrCodeScreen.qrCode);
     text_layer_destroy(qrCodeScreen.titleLayer);
