@@ -9,8 +9,8 @@ var SETTING_DEFAULT_CITY = "DefaultCity";
 var SETTING_DEFAULT_COUNTRY = "DefaultCountry";
 var SETTING_DEFAULT_UNIT = "DefaultUnit";
 
-//var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
-var PROXY_SERVICE_URL = "http://192.168.42.186/pbmovies/proxy/";
+var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
+//var PROXY_SERVICE_URL = "http://192.168.42.186/pbmovies/proxy/";
 
 var MIN_SPLASH_TIME = 500;
 var MAX_DATA_LENGTH = 120;
