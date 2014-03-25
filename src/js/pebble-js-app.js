@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140324.05;
+var CURRENT_VERSION = 20140325.01;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -9,7 +9,8 @@ var SETTING_DEFAULT_CITY = "DefaultCity";
 var SETTING_DEFAULT_COUNTRY = "DefaultCountry";
 var SETTING_DEFAULT_UNIT = "DefaultUnit";
 
-var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
+//var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
+var PROXY_SERVICE_URL = "http://192.168.42.186/pbmovies/proxy/";
 
 var MIN_SPLASH_TIME = 500;
 var MAX_DATA_LENGTH = 120;
@@ -18,12 +19,13 @@ var DELIMETER_FIELD = "|";
 var DELIMETER_RECORD = "\t";
 
 var MAX_PAGES = 20;
-var MSG_INTERVAL = 2000;
 
 var DISTANCE_UNIT_KM = "km";
 var DISTANCE_UNIT_MILES = "mi";
 var DISTANCE_MILE_IN_M = 0.000621371;
 var DISTANCE_KM_IN_M = 0.001;
+var PRELOAD_KEY = "preloadData";
+var PRELOAD_WAIT_TIME = 2000;
 
 var showtimeTypeMask = {
     'digital': 0,
@@ -64,6 +66,7 @@ var PBMovies = function(initDoneCallback) {
     var currentDate = dateYmd();
     var PostMethods = ["register"];
     var lastPbMsgIn;
+    var isPreloading = false;
     //called on successful location detection
     var locationSuccess = function(pos) {
         var coordinates = pos.coords;
@@ -72,7 +75,7 @@ var PBMovies = function(initDoneCallback) {
         locationSet();
     };
 
-    var isset = function(str){
+    var isset = function(str) {
         return str && (str.length)
     };
 //called on error
@@ -135,25 +138,69 @@ var PBMovies = function(initDoneCallback) {
         setTimeout(preload, 500);
     };
 
-    var preload = function() {
-        service.proxy('preload', null, function(data) {
-            if (data.version && data.version > CURRENT_VERSION) {
-                var lastUpdateAlert = service.get("lastUpdateAlert", true, {
-                    'version': 0,
-                    'time': 0
-                });
-                //show alert ?
-                if (lastUpdateAlert.version < data.version ||
-                        currentTimeInMs() - lastUpdateAlert.time >= 86400000) {
-                    Pebble.showSimpleNotificationOnPebble("Update Available", "A new version Pebble Movies has been published, visit Pebble App store to update!");
-                    service.store("lastUpdateAlert", {'version': data.version, 'time': currentTimeInMs()});
+    var preloadRetries = 0;
+    var preload = function(loadCb, errorCb) {
+        var cachedData = service.isCached(PRELOAD_KEY);
+        var preloadFailed = function(xhr) {
+            isPreloading = false;
+            if (preloadRetries++ < 3) {
+                preloadRetries = 0;
+                if (errorCb) {
+                    errorCb();
                 }
             }
+            console.log(xhr.responseText);
+        };
+        if (!cachedData && !isPreloading) {
+            isPreloading = true;
+            service.proxy('preload11', {'tries': preloadRetries}, function(data) {
+                service.cache(PRELOAD_KEY, data.data);
+                //alert
+                if (data.version && data.version > CURRENT_VERSION) {
+                    var lastUpdateAlert = service.get("lastUpdateAlert", true, {
+                        'version': 0,
+                        'time': 0
+                    });
+                    //show alert ?
+                    if (lastUpdateAlert.version < data.version ||
+                            currentTimeInMs() - lastUpdateAlert.time >= 86400000) {
+                        Pebble.showSimpleNotificationOnPebble("Update Available", "A new version Pebble Movies has been published, visit Pebble App store to update!");
+                        service.store("lastUpdateAlert", {'version': data.version, 'time': currentTimeInMs()});
+                    }
+                }
+                //set preloading
+                isPreloading = false;
+                preloadRetries = 0;
+                if (loadCb) {
+                    loadCb();
+                }
+                //console.log("data preloaded:" + JSON.stringify(data));
+            }, preloadFailed);
+        }
+    };
 
-            //console.log("data preloaded:" + JSON.stringify(data));
-        }, function(xhr) {
-            //console.log("Status: " + xhr.status + " Text: " + xhr.responseText);
-        });
+    var findIdsInList = function(list, ids) {
+        var result = [];
+        if (list && list.length) {
+            for (var i = 0; i < list.length; i++) {
+                if (ids.indexOf(list[i].id) > -1) {
+                    result.push(list[i]);
+                }
+            }
+        }
+        return result;
+    };
+
+    var findIdInList = function(list, id) {
+        //var result = null;
+        if (list && list.length) {
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].id == id) {
+                    return list[i];
+                }
+            }
+        }
+        return null;
     };
 
     var messageHandler = {
@@ -161,56 +208,70 @@ var PBMovies = function(initDoneCallback) {
             initFunction();
         },
         getMovies: function() {
-            service.getMovies(function(movies) {
-                if (movies.length > 0) {
+            messageHandler.checkPreloaded(function(data) {
+                var movies = data.movies;
+                if (movies && movies.length > 0) {
                     messageHandler.sendData(pebbleMessagesIn.movies, movieUtils.convertToData(movies));
                 } else {
                     messageHandler.sendNoData("No movies at the moment");
                 }
-            }, messageHandler.handleErrors);
+            });
         },
         getMovieTheatres: function(dataIn) {
-            var movieId = dataIn.movieId;
-            service.getMovieTheatres(movieId, function(theatres) {
+            messageHandler.checkPreloaded(function(data) {
+                var movieId = dataIn.movieId;
+                var movie = findIdInList(data.movies, movieId);
+                var theatres = movie ? findIdsInList(data.theatres, movie.theatres) : [];
                 if (theatres.length > 0) {
                     messageHandler.sendData(pebbleMessagesIn.movieTheatres, theatreUtils.convertToData(theatres));
                 } else {
                     messageHandler.sendNoData("No theatres near you");
                 }
-            }, messageHandler.handleErrors);
+            });
         },
         getTheatres: function() {
-            service.getTheatres(function(theatres) {
-                if (theatres.length > 0) {
+            messageHandler.checkPreloaded(function(data) {
+                var theatres = data.theatres;
+                if (theatres && theatres.length > 0) {
                     messageHandler.sendData(pebbleMessagesIn.theatres, theatreUtils.convertToData(theatres));
                 } else {
                     messageHandler.sendNoData("No theatres near you");
                 }
-            }, messageHandler.handleErrors);
+            });
         },
         getTheatreMovies: function(dataIn) {
-            var theatreId = dataIn.theatreId;
-            service.getTheatreMovies(theatreId, function(movies) {
+            messageHandler.checkPreloaded(function(data) {
+                var theatreId = dataIn.theatreId;
+                var theatre = findIdInList(data.theatres, theatreId);
+                var movies = theatre ? findIdsInList(data.movies, theatre.movies) : [];
                 if (movies.length > 0) {
                     messageHandler.sendData(pebbleMessagesIn.theatreMovies, movieUtils.convertToData(movies));
                 } else {
                     messageHandler.sendNoData("No movies at the moment");
                 }
-            }, messageHandler.handleErrors);
+            });
         },
-        getShowtimes: function(dataIn) {
-            var theatreId = dataIn.theatreId;
-            var movieId = dataIn.movieId;
-            if (lastPbMsgIn === pebbleMessagesIn.theatreMovies) {
-                //get theatre movies
-                service.getTheatreMovies(theatreId, function(movies) {
-                    showtimeUtils.processFromList(movies, movieId);
+        checkPreloaded: function(callback) {
+            var data = service.isCached(PRELOAD_KEY);
+            if (isPreloading) {//if preloading, then wait
+                setTimeout(function(){
+                    messageHandler.checkPreloaded(callback);
+                }, PRELOAD_WAIT_TIME);
+            } else if (!data) {//not preloading, and no data, try to preload
+                preload(function() {
+                    messageHandler.checkPreloaded(callback);
                 }, messageHandler.handleErrors);
             } else {
-                service.getMovieTheatres(movieId, function(theatres) {
-                    showtimeUtils.processFromList(theatres, theatreId);
-                }, messageHandler.handleErrors);
+                callback(data); //data preloaded, call callback
             }
+        },
+        getShowtimes: function(dataIn) {
+            messageHandler.checkPreloaded(function(data) {
+                var key = dataIn.theatreId + "." + dataIn.movieId;
+                console.log("Showtime Key: "+key);
+                var showtimes = data.showtimes ? data.showtimes[key] : [];
+                showtimeUtils.processShowtimes(showtimes || []);
+            });
         },
         getQrCode: function(dataIn) {
             var showtimeId = dataIn.showtimeId;
@@ -274,7 +335,7 @@ var PBMovies = function(initDoneCallback) {
             //console.log("Out data" + JSON.stringify(outData));
             Pebble.sendAppMessage(outData, function(e) {
                 retries = 0;
-                console.log("Delivered");
+                //console.log("Delivered");
                 if (currentPage < totalPages && currentPage < MAX_PAGES) {
                     messageHandler.sendData(msgCode, data, ++currentPage, raw, retries);
                 }
@@ -300,26 +361,28 @@ var PBMovies = function(initDoneCallback) {
 
 
     var showtimeUtils = {
-        processFromList: function(list, idToSearch) {
-            for (var i = 0; i < list.length; i++) {
-                if (list[i].id == idToSearch) {
-                    //console.log("Found showtimes...");
-                    return showtimeUtils.processShowtimes(list[i].showtimes || []);
-                }
-            }
-            //console.log("showtimes not found...");
-            return showtimeUtils.processShowtime([]);
-        },
+//        processFromList: function(list, idToSearch) {
+//            for (var i = 0; i < list.length; i++) {
+//                if (list[i].id == idToSearch) {
+//                    //console.log("Found showtimes...");
+//                    return showtimeUtils.processShowtimes(list[i].showtimes || []);
+//                }
+//            }
+//            //console.log("showtimes not found...");
+//            return showtimeUtils.processShowtime([]);
+//        },
         processShowtimes: function(showtimes) {
-            var records = [];
+            var records = [], notPast;
+            
             for (var i = 0; i < showtimes.length; i++) {
                 var showtime = [];
-                var hasUrl = showtimes[i].url && showtimes[i].url.length ? 1 : 0;
-                var time = showtimeUtils.formatTime(showtimes[i].show_date, showtimes[i].show_time);
+                //var hasUrl = showtimes[i].url && showtimes[i].url.length ? 1 : 0;
+                var time = showtimeUtils.formatTime(currentDate, showtimes[i].show_time);
+                notPast = new Date(currentDate + " "+showtimes[i].show_time).getTime() > currentTimeInMs();
                 showtime.push(showtimes[i].id);
                 showtime.push(showtimeTypeMask[showtimes[i].type]);
                 showtime.push(time);
-                showtime.push(hasUrl);
+                showtime.push(notPast && showtimes[i].link ? 1 : 0);
 //14579
                 records.push(showtime.join(DELIMETER_FIELD));
             }
@@ -376,6 +439,7 @@ var PBMovies = function(initDoneCallback) {
 
     var movieUtils = {
         convertToData: function(movies) {
+            sort_in_place(movies, 'title');
             var movie, records = [];
             for (var i = 0; i < movies.length; i++) {
                 //id,title,genre,user_rating,rated,critic_rating,runtime                    
@@ -459,62 +523,62 @@ var PBMovies = function(initDoneCallback) {
             validity = validity ? validity : CACHE_EXPIRY;
             return service.store(k, {expiry: currentTimeInMs() + validity, 'data': data}, true);
         },
-        getMovies: function(onSuccess, onError) {
-            var key = "movies";
-            var cached = service.isCached(key);
-            if (cached) {
-                return onSuccess(cached);
-            }
-
-            service.proxy('movies', null, function(resp) {
-                service.cache(key, resp.movies);
-                onSuccess(resp.movies);
-            }, function(xhr) {
-                service.serviceError(key, xhr, onSuccess, onError);
-            });
-        },
-        getTheatres: function(onSuccess, onError) {
-            var key = "theatres";
-            var cached = service.isCached(key);
-            if (cached) {
-                return onSuccess(cached);
-            }
-
-            service.proxy('theatres', null, function(resp) {
-                service.cache(key, resp.theatres);
-                onSuccess(resp.theatres);
-            }, function(xhr) {
-                service.serviceError(key, xhr, onSuccess, onError);
-            });
-        },
-        getMovieTheatres: function(movieId, onSuccess, onError) {
-            var key = "movie_theatres_" + movieId;
-            var cached = service.isCached(key);
-            if (cached) {
-                return onSuccess(cached);
-            }
-
-            service.proxy('movie-theatres', {movie_id: movieId}, function(resp) {
-                service.cache(key, resp.movie_theatres);
-                onSuccess(resp.movie_theatres);
-            }, function(xhr) {
-                service.serviceError(key, xhr, onSuccess, onError);
-            });
-        },
-        getTheatreMovies: function(theatreId, onSuccess, onError) {
-            var key = "theatre_movies_" + theatreId;
-            var cached = service.isCached(key);
-            if (cached) {
-                return onSuccess(cached);
-            }
-
-            service.proxy('theatre-movies', {theatre_id: theatreId}, function(resp) {
-                service.cache(key, resp.theatre_movies);
-                onSuccess(resp.theatre_movies);
-            }, function(xhr) {
-                service.serviceError(key, xhr, onSuccess, onError);
-            });
-        },
+//        getMovies: function(onSuccess, onError) {
+//            var key = "movies";
+//            var cached = service.isCached(key);
+//            if (cached) {
+//                return onSuccess(cached);
+//            }
+//
+//            service.proxy('movies', null, function(resp) {
+//                service.cache(key, resp.movies);
+//                onSuccess(resp.movies);
+//            }, function(xhr) {
+//                service.serviceError(key, xhr, onSuccess, onError);
+//            });
+//        },
+//        getTheatres: function(onSuccess, onError) {
+//            var key = "theatres";
+//            var cached = service.isCached(key);
+//            if (cached) {
+//                return onSuccess(cached);
+//            }
+//
+//            service.proxy('theatres', null, function(resp) {
+//                service.cache(key, resp.theatres);
+//                onSuccess(resp.theatres);
+//            }, function(xhr) {
+//                service.serviceError(key, xhr, onSuccess, onError);
+//            });
+//        },
+//        getMovieTheatres: function(movieId, onSuccess, onError) {
+//            var key = "movie_theatres_" + movieId;
+//            var cached = service.isCached(key);
+//            if (cached) {
+//                return onSuccess(cached);
+//            }
+//
+//            service.proxy('movie-theatres', {movie_id: movieId}, function(resp) {
+//                service.cache(key, resp.movie_theatres);
+//                onSuccess(resp.movie_theatres);
+//            }, function(xhr) {
+//                service.serviceError(key, xhr, onSuccess, onError);
+//            });
+//        },
+//        getTheatreMovies: function(theatreId, onSuccess, onError) {
+//            var key = "theatre_movies_" + theatreId;
+//            var cached = service.isCached(key);
+//            if (cached) {
+//                return onSuccess(cached);
+//            }
+//
+//            service.proxy('theatre-movies', {theatre_id: theatreId}, function(resp) {
+//                service.cache(key, resp.theatre_movies);
+//                onSuccess(resp.theatre_movies);
+//            }, function(xhr) {
+//                service.serviceError(key, xhr, onSuccess, onError);
+//            });
+//        },
         serviceError: function(cacheKey, xhr, onSuccess, onError) {
             var cached = service.isCached(cacheKey, true);
             if (cached) {
@@ -573,6 +637,7 @@ var initFunction = function(sends) {
             });
         }, MIN_SPLASH_TIME)
     });
+    //movieService.unStore("secretKey");
 };
 
 Pebble.addEventListener("ready", function(e) {
