@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140331.01;
+var CURRENT_VERSION = 20140331.02;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -476,23 +476,27 @@ var PBMovies = function(initDoneCallback) {
 
     var service = {
         unStore: function(key) {
-            if (localStorage) {
-                delete localStorage[key];
+            if (window.localStorage) {
+                delete window.localStorage[key];
             }
         },
         isStored: function(key) {
-            return localStorage && localStorage[key] !== undefined;
+            return window.localStorage && window.localStorage[key] !== undefined;
         },
         store: function(key, val, asObject) {
             try {
-                localStorage.setItem(key, asObject ? JSON.stringify(val) : val);
+                window.localStorage.setItem(key, asObject ? JSON.stringify(val) : val);
             } catch (e) {
                 console.log("Error occured while saving item");
             }
         },
         get: function(key, asObject, defaultValue) {
-            if (localStorage && localStorage.hasOwnProperty(key)) {
-                return asObject ? JSON.parse(localStorage.getItem(key)) : localStorage.getItem(key);
+            try {
+                if (window.localStorage && window.localStorage[key] !== null) {
+                    return asObject ? JSON.parse(window.localStorage.getItem(key)) : window.localStorage.getItem(key);
+                }
+            } catch (e) {   
+                console.log("Storage Object error");
             }
             return defaultValue ? defaultValue : null;
         },
