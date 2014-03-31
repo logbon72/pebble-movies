@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140325.01;
+var CURRENT_VERSION = 20140331.01;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -154,7 +154,7 @@ var PBMovies = function(initDoneCallback) {
                     errorCb();
                 }
             } else {
-                setTimeout(function(){
+                setTimeout(function() {
                     preload(loadCb, errorCb);
                 }, PRELOAD_WAIT_TIME);
             }
@@ -476,16 +476,22 @@ var PBMovies = function(initDoneCallback) {
 
     var service = {
         unStore: function(key) {
-            delete localStorage[key];
+            if (localStorage) {
+                delete localStorage[key];
+            }
         },
         isStored: function(key) {
-            return localStorage.hasOwnProperty(key);
+            return localStorage && localStorage[key] !== undefined;
         },
         store: function(key, val, asObject) {
-            localStorage.setItem(key, asObject ? JSON.stringify(val) : val);
+            try {
+                localStorage.setItem(key, asObject ? JSON.stringify(val) : val);
+            } catch (e) {
+                console.log("Error occured while saving item");
+            }
         },
         get: function(key, asObject, defaultValue) {
-            if (localStorage.hasOwnProperty(key)) {
+            if (localStorage && localStorage.hasOwnProperty(key)) {
                 return asObject ? JSON.parse(localStorage.getItem(key)) : localStorage.getItem(key);
             }
             return defaultValue ? defaultValue : null;
