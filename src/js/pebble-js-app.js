@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140331.02;
+var CURRENT_VERSION = 20140401.01;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -492,10 +492,10 @@ var PBMovies = function(initDoneCallback) {
         },
         get: function(key, asObject, defaultValue) {
             try {
-                if (window.localStorage && window.localStorage[key] !== null) {
+                if (window.localStorage && window.localStorage[key]) {
                     return asObject ? JSON.parse(window.localStorage.getItem(key)) : window.localStorage.getItem(key);
                 }
-            } catch (e) {   
+            } catch (e) {
                 console.log("Storage Object error");
             }
             return defaultValue ? defaultValue : null;
@@ -535,14 +535,15 @@ var PBMovies = function(initDoneCallback) {
             var k = 'cache_' + dataKey;
             if (service.isStored(k)) {
                 var cached = service.get(k, true);
-                if (ignoreExpiry || cached.expiry > currentTimeInMs()) {
-                    console.log("Cache HIT");
-                    return cached.data;
+                try {
+                    if (ignoreExpiry || (cached && cached.expiry > currentTimeInMs())) {
+                        console.log("Cache HIT");
+                        return cached.data;
+                    }
+                } catch (e) {
+                    console.log("Error occured in cache checking...");
                 }
-//                else {
-//                    console.log("Cache HIT");
-//                    service.unStore(k);
-//                }
+
             }
             return null;
         },
@@ -551,62 +552,6 @@ var PBMovies = function(initDoneCallback) {
             validity = validity ? validity : CACHE_EXPIRY;
             return service.store(k, {expiry: currentTimeInMs() + validity, 'data': data}, true);
         },
-//        getMovies: function(onSuccess, onError) {
-//            var key = "movies";
-//            var cached = service.isCached(key);
-//            if (cached) {
-//                return onSuccess(cached);
-//            }
-//
-//            service.proxy('movies', null, function(resp) {
-//                service.cache(key, resp.movies);
-//                onSuccess(resp.movies);
-//            }, function(xhr) {
-//                service.serviceError(key, xhr, onSuccess, onError);
-//            });
-//        },
-//        getTheatres: function(onSuccess, onError) {
-//            var key = "theatres";
-//            var cached = service.isCached(key);
-//            if (cached) {
-//                return onSuccess(cached);
-//            }
-//
-//            service.proxy('theatres', null, function(resp) {
-//                service.cache(key, resp.theatres);
-//                onSuccess(resp.theatres);
-//            }, function(xhr) {
-//                service.serviceError(key, xhr, onSuccess, onError);
-//            });
-//        },
-//        getMovieTheatres: function(movieId, onSuccess, onError) {
-//            var key = "movie_theatres_" + movieId;
-//            var cached = service.isCached(key);
-//            if (cached) {
-//                return onSuccess(cached);
-//            }
-//
-//            service.proxy('movie-theatres', {movie_id: movieId}, function(resp) {
-//                service.cache(key, resp.movie_theatres);
-//                onSuccess(resp.movie_theatres);
-//            }, function(xhr) {
-//                service.serviceError(key, xhr, onSuccess, onError);
-//            });
-//        },
-//        getTheatreMovies: function(theatreId, onSuccess, onError) {
-//            var key = "theatre_movies_" + theatreId;
-//            var cached = service.isCached(key);
-//            if (cached) {
-//                return onSuccess(cached);
-//            }
-//
-//            service.proxy('theatre-movies', {theatre_id: theatreId}, function(resp) {
-//                service.cache(key, resp.theatre_movies);
-//                onSuccess(resp.theatre_movies);
-//            }, function(xhr) {
-//                service.serviceError(key, xhr, onSuccess, onError);
-//            });
-//        },
         serviceError: function(cacheKey, xhr, onSuccess, onError) {
             var cached = service.isCached(cacheKey, true);
             if (cached) {
@@ -905,11 +850,12 @@ function sort_in_place(objects, key, compCb) {
 
 function dateYmd() {
     var t = new Date();
-    var dd = t.getDate() > 9 ? t.getDate() : "0" + t.getDay();
+    var dd = t.getDate() > 9 ? t.getDate() : "0" + t.getDate();
     var mnt = t.getMonth() + 1;
     var mm = mnt > 9 ? mnt : "0" + mnt;
     return t.getFullYear() + "-" + mm + "-" + dd;
 }
+
 function utf8_encode(a) {
     if (a === null || typeof a === 'undefined') {
         return'';
