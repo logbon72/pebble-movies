@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140401.01;
+var CURRENT_VERSION = 20140401.02;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -502,12 +502,13 @@ var PBMovies = function(initDoneCallback) {
         },
         proxy: function(command, data, successCallback, errorCallback, urlOnly) {
             var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
-            var urlData = {token: service.signRequest(), 'date': currentDate};
+            var urlData = {token: service.signRequest(), 'date': currentDate, 'version': CURRENT_VERSION};
             for (i in locationInfo) {
                 if (locationInfo.hasOwnProperty(i) && locationInfo[i]) {
                     urlData[i] = locationInfo[i];
                 }
             }
+            
             var url = PROXY_SERVICE_URL + command + "?" + serializeData(urlData);
             var reqData = method === 'POST' ? data : null;
             if (method === 'GET' && data) {
@@ -647,8 +648,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
 Pebble.addEventListener("showConfiguration", function() {
     console.log("showing configuration");
     var proxyUrl = movieService.proxy('settings', {
-        'unit': movieService.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM),
-        'version': CURRENT_VERSION
+        'unit': movieService.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM)
     }, null, null, true);
     console.log("opening settings url: " + proxyUrl);
     Pebble.openURL(proxyUrl);
