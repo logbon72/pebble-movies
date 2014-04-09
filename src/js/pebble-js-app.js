@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140401.02;
+var CURRENT_VERSION = 20140408.01;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -408,7 +408,10 @@ var PBMovies = function(initDoneCallback) {
             }
         },
         formatTime: function(showdate, showtime) {
-            var d = new Date(showdate + " " + showtime);
+            var arr = (showdate + " " + showtime).split(/[- :T]/);
+//And use the constructor with 6 args
+            var d = new Date(arr[0], arr[1] - 1, arr[2], arr[3], arr[4], arr[5]);
+            //var d = new Date(showdate + " " + showtime);
             var min = d.getMinutes();
             var hours = d.getHours();
             var hoursHp = hours % 12 || 12;
@@ -508,7 +511,7 @@ var PBMovies = function(initDoneCallback) {
                     urlData[i] = locationInfo[i];
                 }
             }
-            
+
             var url = PROXY_SERVICE_URL + command + "?" + serializeData(urlData);
             var reqData = method === 'POST' ? data : null;
             if (method === 'GET' && data) {
