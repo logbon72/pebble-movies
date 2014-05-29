@@ -53,7 +53,6 @@ enum PbMsgOut {
 #define DELIMITER_RECORD '\t'
 #define MSG_INTERVAL_WAIT_MS 10000
 
-
 void app_message_init(void);
 //char** str_split(char*, const char, int*);
 //char *strdup(const char *);

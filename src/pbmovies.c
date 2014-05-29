@@ -7,6 +7,7 @@
 #include "movies.h"
 #include "showtimes.h"
 #include "qrcode.h"
+#include "start.h"
 
 #define MSG_CODE_NO_WAIT 0xff
 #define JS_DATA_PER_SEND 240
@@ -235,62 +236,9 @@ static void handle_init_failed(char *message) {
 
 static void handle_start_app() {
     splash_screen_hide();
-    home_screen_init();
+    //home_screen_init();
+    start_screen_init();
 }
-
-//char *strdup(const char *s) {
-//    char *d = malloc(strlen(s) + 1); // Allocate memory
-//    if (d != NULL) strcpy(d, s); // Copy string if okay
-//    return d; // Return new memory
-//}
-//
-//char** str_split(char *src_str, const char delimeter, int *length) {
-//    //replace deliminator's with zeros and count how many
-//    //sub strings with length >= 1 exist
-//    int num_sub_str = 1;
-//    char *loopTruStr = src_str;
-//    short int found_delim = false;
-//    while (*loopTruStr) {
-//        if (*loopTruStr == delimeter) {
-//            *loopTruStr = 0;
-//            found_delim = true;
-//        } else if (found_delim) { //found first character of a new string
-//            num_sub_str++;
-//            found_delim = false;
-//            //sub_str_vec.push_back(src_str_tmp); //for c++
-//        }
-//        loopTruStr++;
-//    }
-//    //printf("Start - found %d sub strings\n", num_sub_str);
-//    if (num_sub_str <= 1) {
-//        return (0);
-//    }
-//
-//    //if you want to use a c++ vector and push onto it, the rest of this function
-//    //can be omitted (obviously modifying input parameters to take a vector, etc)
-//
-//    char **sub_strings = (char **) malloc((sizeof (char*) * num_sub_str) + 1);
-//    const char *src_str_terminator = loopTruStr;
-//    loopTruStr = src_str;
-//    short int found_null = true;
-//    int idx = 0;
-//    while (loopTruStr < src_str_terminator) {
-//        if (!*loopTruStr) //found a NULL
-//            found_null = true;
-//        else if (found_null) {
-//            sub_strings[idx++] = loopTruStr;
-//            //printf("sub_string_%d: [%s]\n", idx-1, sub_strings[idx-1]);
-//            found_null = false;
-//        }
-//        loopTruStr++;
-//    }
-//    sub_strings[num_sub_str] = NULL;
-//    if (length) {
-//        *length = num_sub_str;
-//    }
-//
-//    return (sub_strings);
-//}
 
 short int record_count(char* string, const char delimeter) {
     int c = 0, count = 0;
