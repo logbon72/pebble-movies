@@ -36,7 +36,7 @@ static int16_t home_screen_header_height_callback(MenuLayer *menu_layer, uint16_
 
 static void home_screen_draw_header(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
     // Determine which section we're working with
-    menu_cell_basic_header_draw(ctx, cell_layer, "Start Here");
+    menu_cell_basic_header_draw(ctx, cell_layer, CurrentDateStr);
 }
 
 // Here we capture when a user selects a menu item
@@ -104,6 +104,7 @@ static void home_screen_unload() {
     }
 }
 
+
 void home_screen_init(void) {
     homeScreen.window = window_create();
     //configure listeners
@@ -119,7 +120,7 @@ void home_screen_init(void) {
 }
 
 void home_screen_deinit() {
-    if (homeScreen.window) {
-        window_destroy(homeScreen.window);
-    }
+//    if (homeScreen.window) {
+//        window_destroy(homeScreen.window);
+//    }
 }

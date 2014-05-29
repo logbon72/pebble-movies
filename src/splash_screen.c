@@ -117,7 +117,9 @@ void splash_screen_set_status_text(char *text) {
 void splash_screen_hide() {
     splashScreen.loading = 0;
     window_stack_remove(splashScreen.window, false);
-    window_destroy(splashScreen.window);
+    if (splashScreen.window) {
+        window_destroy(splashScreen.window);
+    }
 }
 
 void splash_screen_set_loading(uint8_t loading) {

@@ -32,48 +32,7 @@ static struct StartScreen {
     SimpleMenuLayer *menu_layer;
 } startScreen;
 
-static void menu_day_selected(int index, void *ctx) {
-    // Here we just change the subtitle to a literal string
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "You selected date offset %d", index);
-    dateOffset = index;
-    home_screen_init();
-}
-
-//add days to month
-//very minimal
-
 static struct tm *addday(time_t *time, int d) {
-//    APP_LOG(APP_LOG_LEVEL_INFO, "In: %d", x->tm_mday);
-//    x->tm_mday = x->tm_mday+ d;
-//    x->tm_wday = x->tm_wday + d;
-//
-//    if (x->tm_wday > 6) {
-//        x->tm_wday = (x->tm_wday - 7) % 7;
-//    }
-//    
-//    x->tm_yday += d;
-//
-//    int toSub = 0;
-//    do {
-//        if (x->tm_mon == 1) {
-//            toSub = x->tm_year % 4 ? 28 : 29;
-//        } else if (x->tm_mon == 8 || x->tm_mon == 3 || x->tm_mon == 5 || x->tm_mon == 30) {
-//            toSub = 30;
-//        } else {
-//            toSub = 31;
-//        }
-//
-//        if (x->tm_mday > toSub) {
-//            x->tm_mday -= toSub;
-//            x->tm_mon += 1;
-//            if (x->tm_mon > 11) {
-//                x->tm_mon = 0;
-//                x->tm_year += 1;
-//            }
-//        }
-//    } while (x->tm_mday > toSub);
-
-//    APP_LOG(APP_LOG_LEVEL_INFO, "Out: %d", x->tm_mday);
     *time += d * SECONDS_IN_DAY;
     return localtime(time);
 }
@@ -81,6 +40,16 @@ static struct tm *addday(time_t *time, int d) {
 static struct tm *tminc(time_t *x) {
     return addday(x, 1);
 }
+
+static void menu_day_selected(int index, void *ctx) {
+    // Here we just change the subtitle to a literal string
+    //APP_LOG(APP_LOG_LEVEL_DEBUG, "You selected date offset %d", index);
+    dateOffset = index;
+    time_t t = time(0);
+    strftime(CurrentDateStr, sizeof(CurrentDateStr), "%A, %b %e", addday(&t, index));
+    home_screen_init();
+}
+
 
 static void start_screen_load(Window *window) {
     Layer *windowLayer = window_get_root_layer(window);

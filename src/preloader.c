@@ -151,7 +151,13 @@ void preloader_stop() {
 
 void preloader_set_hidden(Window* window) {
     preloader_set_is_on(0);
+    APP_LOG(APP_LOG_LEVEL_INFO,"Popping preloader, %p", preloader.window);
     window_stack_remove(preloader.window, false);
-    window_destroy(preloader.window);
+    if (preloader.window) {
+        APP_LOG(APP_LOG_LEVEL_INFO,"Hiding preloader");
+        window_destroy(preloader.window);
+        APP_LOG(APP_LOG_LEVEL_INFO,"Hidden");
+    }
+    preloader.window = NULL;
 }
 
