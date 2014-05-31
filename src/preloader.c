@@ -11,7 +11,7 @@
 #define ANIMATION_TIMEOUT 200
 
 static Layer *square_layer;
-static GBitmap *statusBarIcon;
+//static GBitmap *statusBarIcon;
 //static const char *STATUS_TEXT;
 //static const char *PRESS_BACK ="Press Back Again";
 static char *LOADING_TEXT = "Loading...";
@@ -55,11 +55,18 @@ static void timer_callback(void *context) {
 
 static void unload(Window *w) {
     //gpath_destroy(square_path);
-    layer_destroy(square_layer);
+    if (square_layer) {
+        layer_destroy(square_layer);
+    }
     //window_destroy(window);
-    app_timer_cancel(preloader.timer);
+    if (preloader.timer) {
+        app_timer_cancel(preloader.timer);
+        preloader.timer = NULL;
+    }
+
     text_layer_destroy(preloader.statusText);
-    gbitmap_destroy(statusBarIcon);
+    
+    //gbitmap_destroy(statusBarIcon);
     preloader.isOn = 1;
 }
 
@@ -80,12 +87,12 @@ static void preloader_appear(Window *window) {
 
 static void preloader_load(Window *window) {
     window_set_background_color(window, GColorBlack);
-    window_set_status_bar_icon(window, statusBarIcon);
+///    window_set_status_bar_icon(window, statusBarIcon);
     Layer *window_layer = window_get_root_layer(preloader.window);
 
-    if (!statusBarIcon) {
-        statusBarIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_STATUS_BAR);
-    }
+//    if (!statusBarIcon) {
+//        statusBarIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_STATUS_BAR);
+//    }
 
     GRect bounds = layer_get_bounds(window_layer);
     square_layer = layer_create(GRect(40, 50, bounds.size.w - 50, 20));
@@ -151,12 +158,11 @@ void preloader_stop() {
 
 void preloader_set_hidden(Window* window) {
     preloader_set_is_on(0);
-    APP_LOG(APP_LOG_LEVEL_INFO,"Popping preloader, %p", preloader.window);
+//    APP_LOG(APP_LOG_LEVEL_INFO, "Popping preloader, %p", preloader.window);
     window_stack_remove(preloader.window, false);
+//    APP_LOG(APP_LOG_LEVEL_INFO, "Popped");
     if (preloader.window) {
-        APP_LOG(APP_LOG_LEVEL_INFO,"Hiding preloader");
         window_destroy(preloader.window);
-        APP_LOG(APP_LOG_LEVEL_INFO,"Hidden");
     }
     preloader.window = NULL;
 }

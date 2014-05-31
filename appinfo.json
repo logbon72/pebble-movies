@@ -17,6 +17,7 @@
         , "movieId": 16
         , "theatreId": 32
         , "showtimeId": 64
+        , "dateOffset": 128
     },
     "capabilities": ["location", "configurable"],
     "resources": {

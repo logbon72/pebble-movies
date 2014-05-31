@@ -62,7 +62,7 @@ static void start_screen_load(Window *window) {
 //    currentTime = localtime(&rawtime);
 
     //today's format
-    strftime(TodayText, sizeof (TodayText), "%b %e", tminc(&rawtime));
+    strftime(TodayText, sizeof (TodayText), "%b %e", localtime(&rawtime));
 
     int i = 0;
     menu_days[i++] = (SimpleMenuItem){

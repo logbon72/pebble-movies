@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140408.01;
+var CURRENT_VERSION = 20140530.01;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -8,9 +8,10 @@ var SETTING_DEFAULT_POSTAL_CODE = "PostalCode";
 var SETTING_DEFAULT_CITY = "DefaultCity";
 var SETTING_DEFAULT_COUNTRY = "DefaultCountry";
 var SETTING_DEFAULT_UNIT = "DefaultUnit";
+var SETTING_FORCE_LOCATION = "ForceLocation";
 
-var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
-//var PROXY_SERVICE_URL = "http://192.168.42.186/pbmovies/proxy/";
+//var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
+var PROXY_SERVICE_URL = "http://192.168.0.9/pbmovies/proxy/";
 
 var MIN_SPLASH_TIME = 500;
 var MAX_DATA_LENGTH = 240;
@@ -27,14 +28,17 @@ var DISTANCE_KM_IN_M = 0.001;
 
 var PRELOAD_WAIT_TIME = 2000;
 
-var KEY_PRELOAD = "preloadData121";
+var KEY_PRELOAD = "preloadData1.2";
 var KEY_DEVICE_ID = "deviceId";
 var KEY_SECRET_KEY = "secretKey";
 
 var showtimeTypeMask = {
     'digital': 0,
     'digital 3D': 1,
-    'IMAX': 2
+    'IMAX': 2,
+    'd': 0,
+    '3d': 1,
+    'i': 2
 };
 
 var pebbleMessagesIn = {
@@ -59,9 +63,11 @@ var pebbleMessagesOut = {
     , getShowtimes: 5
     , getQrCode: 6
 };
-//console.log("Is this working");
+
+
 /**
  * 
+ * @param {function} initDoneCallback description
  * @returns {PBMovies.service}
  */
 var PBMovies = function(initDoneCallback) {
@@ -80,7 +86,7 @@ var PBMovies = function(initDoneCallback) {
     };
 
     var isset = function(str) {
-        return str && (str.length)
+        return str && (str.length);
     };
 //called on error
     var locationError = function(err) {
@@ -99,15 +105,6 @@ var PBMovies = function(initDoneCallback) {
         console.log("Location is set" + JSON.stringify(locationInfo));
     };
 
-
-    var init = function() {
-        //var locationInfo = service.get('location', true);
-        locationInfo.postalCode = service.get(SETTING_DEFAULT_POSTAL_CODE, false, "");
-        locationInfo.city = service.get(SETTING_DEFAULT_CITY, false, "");
-        locationInfo.country = service.get(SETTING_DEFAULT_COUNTRY, false, "");
-        window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
-        _initRegistration();
-    };
 
     var _initRegistration = function() {
         secretKey = service.get(KEY_SECRET_KEY);
@@ -136,11 +133,9 @@ var PBMovies = function(initDoneCallback) {
     };
 
     var registerDone = function() {
-        //console.log("Registration Done: Device ID : " + deviceId + " \nSecretKey: " + secretKey.substring(0, 10) + "...");
-        //service.isReady = true;
         console.log("Registered: " + deviceId);
         initDoneCallback();
-        setTimeout(preload, 2000);
+        setTimeout(preload, 700);
     };
 
     var preloadRetries = 0;
@@ -148,7 +143,7 @@ var PBMovies = function(initDoneCallback) {
         var cachedData = service.isCached(KEY_PRELOAD);
         var preloadFailed = function(xhr) {
             isPreloading = false;
-            if (++preloadRetries > 3) {
+            if (++preloadRetries > 4) {
                 preloadRetries = 0;
                 if (errorCb) {
                     errorCb();
@@ -160,6 +155,8 @@ var PBMovies = function(initDoneCallback) {
             }
             console.log(xhr.responseText);
         };
+
+        //is caching or precached
         if (!cachedData && !isPreloading) {
             isPreloading = true;
             service.proxy('preload11', {'tries': preloadRetries},
@@ -192,11 +189,12 @@ var PBMovies = function(initDoneCallback) {
         }
     };
 
-    var findIdsInList = function(list, ids) {
+    var findIdsInList = function(list, ids, idIdx) {
+        idIdx = idIdx ? idIdx : 0;
         var result = [];
         if (list && list.length) {
             for (var i = 0; i < list.length; i++) {
-                if (ids.indexOf(list[i].id) > -1) {
+                if (ids.indexOf(list[i][idIdx]) > -1) {
                     result.push(list[i]);
                 }
             }
@@ -204,11 +202,12 @@ var PBMovies = function(initDoneCallback) {
         return result;
     };
 
-    var findIdInList = function(list, id) {
+    var findIdInList = function(list, id, idIdx) {
         //var result = null;
+        idIdx = idIdx ? idIdx : 0;
         if (list && list.length) {
             for (var i = 0; i < list.length; i++) {
-                if (list[i].id == id) {
+                if (list[i][idIdx] == id) {
                     return list[i];
                 }
             }
@@ -234,7 +233,8 @@ var PBMovies = function(initDoneCallback) {
             messageHandler.checkPreloaded(function(data) {
                 var movieId = dataIn.movieId;
                 var movie = findIdInList(data.movies, movieId);
-                var theatres = movie ? findIdsInList(data.theatres, movie.theatres) : [];
+                //theatres is index 7
+                var theatres = movie ? findIdsInList(data.theatres, movie[7]) : [];
                 if (theatres.length > 0) {
                     messageHandler.sendData(pebbleMessagesIn.movieTheatres, theatreUtils.convertToData(theatres));
                 } else {
@@ -256,7 +256,9 @@ var PBMovies = function(initDoneCallback) {
             messageHandler.checkPreloaded(function(data) {
                 var theatreId = dataIn.theatreId;
                 var theatre = findIdInList(data.theatres, theatreId);
-                var movies = theatre ? findIdsInList(data.movies, theatre.movies) : [];
+                //console.log("T: "+JSON.stringify(theatre)+ " Movies: "+ JSON.stringify(theatre[4]));
+                var movies = theatre ? findIdsInList(data.movies, theatre[4], 0) : [];
+                //console.log("TMovies: "+JSON.stringify(movies));
                 if (movies.length > 0) {
                     messageHandler.sendData(pebbleMessagesIn.theatreMovies, movieUtils.convertToData(movies));
                 } else {
@@ -323,10 +325,6 @@ var PBMovies = function(initDoneCallback) {
         },
         sendData: function(msgCode, data, currentPage, raw, retries) {
             lastPbMsgIn = msgCode;
-//            if (!raw && data.match(/[^\x00-\x7F]/g)) {
-//                data = data.replace(/[^\x00-\x7F]/g, "*");
-//            }
-
             if (!retries) {
                 retries = 0;
             }
@@ -374,29 +372,16 @@ var PBMovies = function(initDoneCallback) {
 
 
     var showtimeUtils = {
-//        processFromList: function(list, idToSearch) {
-//            for (var i = 0; i < list.length; i++) {
-//                if (list[i].id == idToSearch) {
-//                    //console.log("Found showtimes...");
-//                    return showtimeUtils.processShowtimes(list[i].showtimes || []);
-//                }
-//            }
-//            //console.log("showtimes not found...");
-//            return showtimeUtils.processShowtime([]);
-//        },
+        //"id", "time", "type", "link"
         processShowtimes: function(showtimes) {
             var records = [];
-
             for (var i = 0; i < showtimes.length; i++) {
                 var showtime = [];
-                //var hasUrl = showtimes[i].url && showtimes[i].url.length ? 1 : 0;
-                var time = showtimeUtils.formatTime(currentDate, showtimes[i].show_time);
-                //notPast = new Date(currentDate + " " + showtimes[i].show_time).getTime() > currentTimeInMs();
-                showtime.push(showtimes[i].id);
-                showtime.push(showtimeTypeMask[showtimes[i].type]);
+                var time = showtimeUtils.formatTime(currentDate, showtimes[i][1]);
+                showtime.push(showtimes[i][0]);
+                showtime.push(showtimeTypeMask[showtimes[i][2]]);
                 showtime.push(time);
-                showtime.push(showtimes[i].link ? 1 : 0);
-//14579
+                showtime.push(showtimes[i][3] ? 1 : 0);
                 records.push(showtime.join(DELIMETER_FIELD));
             }
             //bug 
@@ -410,7 +395,7 @@ var PBMovies = function(initDoneCallback) {
         formatTime: function(showdate, showtime) {
             var arr = (showdate + " " + showtime).split(/[- :T]/);
 //And use the constructor with 6 args
-            var d = new Date(arr[0], arr[1] - 1, arr[2], arr[3], arr[4], arr[5]);
+            var d = new Date(arr[0], arr[1] - 1, arr[2], arr[3], arr[4], 0);
             //var d = new Date(showdate + " " + showtime);
             var min = d.getMinutes();
             var hours = d.getHours();
@@ -433,9 +418,9 @@ var PBMovies = function(initDoneCallback) {
         },
         convertToData: function(theatres) {
             var theatre, records = [];
-            sort_in_place(theatres, 'distance_m', function(t1, t2) {
-                var dist1 = parseInt(t1.distance_m);
-                var dist2 = parseInt(t2.distance_m);
+            sort_in_place(theatres, 3, function(t1, t2) {
+                var dist1 = parseInt(t1[3]);
+                var dist2 = parseInt(t2[3]);
                 if (dist1 === dist2) {
                     return 0;
                 }
@@ -443,9 +428,10 @@ var PBMovies = function(initDoneCallback) {
                 dist2 = dist2 < 0 ? 10000000000 : dist2;
                 return dist1 > dist2 ? 1 : -1;
             });
+
             for (var i = 0; i < theatres.length; i++) {
                 //"id,name,address,distance_m"
-                theatre = objectValues(theatres[i]);
+                theatre = theatres[i];
                 theatre[3] = theatreUtils.formatDistance(theatre[3]);
                 records.push(theatre.join(DELIMETER_FIELD));
             }
@@ -460,7 +446,7 @@ var PBMovies = function(initDoneCallback) {
             for (var i = 0; i < movies.length; i++) {
                 //id,title,genre,user_rating,rated,critic_rating,runtime                    
                 try {
-                    movie = objectValues(movies[i]);
+                    movie = movies[i];
                     movie[2] = movie[2] || " ";
                     movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
                     movie[4] = movie[4] ? movie[4] + "" : "NR";
@@ -506,9 +492,12 @@ var PBMovies = function(initDoneCallback) {
         proxy: function(command, data, successCallback, errorCallback, urlOnly) {
             var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
             var urlData = {token: service.signRequest(), 'date': currentDate, 'version': CURRENT_VERSION};
+            var forceLocation = parseInt(movieService.get(SETTING_FORCE_LOCATION, false, "0"));
             for (i in locationInfo) {
                 if (locationInfo.hasOwnProperty(i) && locationInfo[i]) {
-                    urlData[i] = locationInfo[i];
+                    if (!(i === 'latlng' && forceLocation)) {
+                        urlData[i] = locationInfo[i];
+                    }
                 }
             }
 
@@ -583,9 +572,23 @@ var PBMovies = function(initDoneCallback) {
                 }
             }
             console.log("can't handle message code: " + msgCode);
+        },
+        loadLoactionInfo: function() {
+            locationInfo.postalCode = service.get(SETTING_DEFAULT_POSTAL_CODE, false, "");
+            locationInfo.city = service.get(SETTING_DEFAULT_CITY, false, "");
+            locationInfo.country = service.get(SETTING_DEFAULT_COUNTRY, false, "");
         }
 
     };
+
+    var init = function() {
+        //var locationInfo = service.get('location', true);
+        service.loadLoactionInfo();
+        window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+        _initRegistration();
+    };
+
+
     init();
     return service;
 };
@@ -596,6 +599,7 @@ var PBMovies = function(initDoneCallback) {
  * @type PBMovies.service
  */
 var movieService;
+
 var initFunction = function(sends) {
     //var timeSinceLaunch, timeStarted = currentTimeInMs();
     sends = sends || 1;
@@ -612,7 +616,7 @@ var initFunction = function(sends) {
                     initFunction(sends);
                 }
             });
-        }, MIN_SPLASH_TIME)
+        }, MIN_SPLASH_TIME);
     });
     //movieService.unStore("secretKey");
 };
@@ -636,14 +640,22 @@ Pebble.addEventListener("webviewclosed", function(e) {
     //console.log("configuration closed");
     // webview closed
     var options = JSON.parse(decodeURIComponent(e.response));
-    var keys = [SETTING_DEFAULT_CITY, SETTING_DEFAULT_COUNTRY, SETTING_DEFAULT_POSTAL_CODE, SETTING_DEFAULT_UNIT];
+    var keys = [SETTING_DEFAULT_CITY, SETTING_DEFAULT_COUNTRY, SETTING_DEFAULT_POSTAL_CODE, SETTING_DEFAULT_UNIT, SETTING_FORCE_LOCATION];
+    var changed = false;
     if (options) {
         for (var i = 0; i < keys.length; i++) {
-            if (keys[i] in options && options[keys[i]]) {
+            if (keys[i] in options && options[keys[i]] !== null) {
+                changed = changed || options[keys[i]] != movieService.get(keys[i]);
                 movieService.store(keys[i], options[keys[i]]);
             }
         }
     }
+
+    if (changed) {
+        movieService.cache(KEY_PRELOAD, null, 0);
+        movieService.loadLoactionInfo();
+    }
+
     console.log("Options = " + JSON.stringify(options));
 });
 
@@ -652,6 +664,7 @@ Pebble.addEventListener("showConfiguration", function() {
     console.log("showing configuration");
     var proxyUrl = movieService.proxy('settings', {
         'unit': movieService.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM)
+        , 'forceLocation': movieService.get(SETTING_FORCE_LOCATION, false, "0")
     }, null, null, true);
     console.log("opening settings url: " + proxyUrl);
     Pebble.openURL(proxyUrl);
@@ -677,7 +690,7 @@ function serializeData(data) {
 
 
 function currentTimeInMs() {
-    return new Date().getTime();
+    return Date.now();
 }
 
 function transferImageBytes(bytes, chunkSize, successCb, failureCb) {

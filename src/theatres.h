@@ -25,6 +25,6 @@ struct TheatreRecord {
 } currentTheatre;
 
 
-char THEATRES_LIST[1600];
+char THEATRES_LIST[1316];
 
 void theatres_screen_initialize(int, enum TheatreUiMode, char*);
