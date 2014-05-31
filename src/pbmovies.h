@@ -48,7 +48,7 @@ enum PbMsgOut {
 };
 
 
-#define PB_OUTBOX_SIZE 64
+#define PB_OUTBOX_SIZE 96
 #define PB_INBOX_SIZE 2000
 #define DELIMITER_FIELD '|'
 #define DELIMITER_RECORD '\t'

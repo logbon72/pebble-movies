@@ -31,6 +31,7 @@ var PRELOAD_WAIT_TIME = 2000;
 var KEY_PRELOAD = "preloadData1.2";
 var KEY_DEVICE_ID = "deviceId";
 var KEY_SECRET_KEY = "secretKey";
+var DAYS_TO_BROWSE = 5;
 
 var showtimeTypeMask = {
     'digital': 0,
@@ -74,6 +75,7 @@ var PBMovies = function(initDoneCallback) {
     var locationInfo = {}, secretKey, deviceId;
     var locationOptions = {"timeout": LOCATION_TIMEOUT, "maximumAge": LOCATION_EXPIRY};
     var currentDate = dateYmd();
+    var dateOffset = 0;
     var PostMethods = ["register"];
     var lastPbMsgIn;
     var isPreloading = false;
@@ -267,6 +269,7 @@ var PBMovies = function(initDoneCallback) {
             });
         },
         checkPreloaded: function(callback) {
+
             var data = service.isCached(KEY_PRELOAD);
             if (isPreloading) {//if preloading, then wait
                 setTimeout(function() {
@@ -491,7 +494,7 @@ var PBMovies = function(initDoneCallback) {
         },
         proxy: function(command, data, successCallback, errorCallback, urlOnly) {
             var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
-            var urlData = {token: service.signRequest(), 'date': currentDate, 'version': CURRENT_VERSION};
+            var urlData = {token: service.signRequest(), 'date': currentDate, 'version': CURRENT_VERSION, 'dateOffset': dateOffset};
             var forceLocation = parseInt(movieService.get(SETTING_FORCE_LOCATION, false, "0"));
             for (i in locationInfo) {
                 if (locationInfo.hasOwnProperty(i) && locationInfo[i]) {
@@ -524,8 +527,11 @@ var PBMovies = function(initDoneCallback) {
         getRequest: function(url, successHandler, errorHandler) {
             return makeRequest(url, 'GET', successHandler, errorHandler);
         },
+        cacheKey: function(dataKey, offset) {
+            return 'cache_' + dataKey + "_" + dateYmdWithOffset(offset !== undefined ? offset : dateOffset);
+        },
         isCached: function(dataKey, ignoreExpiry) {
-            var k = 'cache_' + dataKey;
+            var k = service.cacheKey(dataKey);
             if (service.isStored(k)) {
                 var cached = service.get(k, true);
                 try {
@@ -541,9 +547,13 @@ var PBMovies = function(initDoneCallback) {
             return null;
         },
         cache: function(dataKey, data, validity) {
-            var k = 'cache_' + dataKey;
+            var k = service.cacheKey(dataKey);
             validity = validity ? validity : CACHE_EXPIRY;
             return service.store(k, {expiry: currentTimeInMs() + validity, 'data': data}, true);
+        },
+        uncache: function(dataKey, offset) {
+            var k = service.cacheKey(dataKey, offset);
+            service.unStore(k);
         },
         serviceError: function(cacheKey, xhr, onSuccess, onError) {
             var cached = service.isCached(cacheKey, true);
@@ -559,7 +569,11 @@ var PBMovies = function(initDoneCallback) {
         },
         handleMessage: function(payload) {
             var msgCode = parseInt(payload.code);
-            //console.log("Handling message... "+msgCode);
+
+            if (payload.dateOffset !== undefined) {
+                dateOffset = payload.dateOffset;
+            }
+            //console.log("Handling message... "+JSON.stringify(payload));
             for (var i in pebbleMessagesOut) {
                 if (pebbleMessagesOut[i] === msgCode) {
                     if (messageHandler.hasOwnProperty(i)) {
@@ -652,7 +666,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
     }
 
     if (changed) {
-        movieService.cache(KEY_PRELOAD, null, 0);
+        for (var i = 0; i < DAYS_TO_BROWSE; i++) {
+            movieService.uncache(KEY_PRELOAD, i);
+        }
         movieService.loadLoactionInfo();
     }
 
@@ -864,14 +880,16 @@ function sort_in_place(objects, key, compCb) {
     }
 }
 
-function dateYmd() {
-    var t = new Date();
+function dateYmd(ts) {
+    var t = ts ? new Date(ts) : new Date();
     var dd = t.getDate() > 9 ? t.getDate() : "0" + t.getDate();
     var mnt = t.getMonth() + 1;
     var mm = mnt > 9 ? mnt : "0" + mnt;
     return t.getFullYear() + "-" + mm + "-" + dd;
 }
-
+function dateYmdWithOffset(o) {
+    return dateYmd(Date.now() + o * 86400000);
+}
 function utf8_encode(a) {
     if (a === null || typeof a === 'undefined') {
         return'';

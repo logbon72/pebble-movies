@@ -6,7 +6,7 @@
 static const char* typeDigital = "Digital";
 static const char* typeDigital3D = "3D";
 static const char* typeIMAX = "IMAX 3D";
-static const char* sectionHeader = "Available Showtimes";
+//static const char* sectionHeader = "Available Showtimes";
 
 #define SHOWTIME_TYPE_DIGITAL '0'
 #define SHOWTIME_TYPE_3D '1'
@@ -74,7 +74,7 @@ static int16_t menu_header_height_callback(MenuLayer *menu_layer, uint16_t secti
 
 static void menu_draw_header(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
     // Determine which section we're working with
-    menu_cell_basic_header_draw(ctx, cell_layer, sectionHeader);
+    menu_cell_basic_header_draw(ctx, cell_layer, CurrentDateStr);
 }
 
 static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *ci, void *data) {

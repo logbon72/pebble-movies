@@ -24,7 +24,11 @@ static char TomorrowText[7];
 //static const char *MENU_FORMAT_DATE = "%b %e";
 //static const char *MENU_FORMAT_WDAY = "%b %e";
 
-int dateOffset = 0;
+static int dateOffset = 0;
+
+int get_date_offset(){
+    return dateOffset;
+}
 
 static struct StartScreen {
     Window *window;

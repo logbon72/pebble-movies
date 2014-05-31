@@ -226,7 +226,7 @@ void app_message_init() {
     app_message_open(PB_INBOX_SIZE, PB_OUTBOX_SIZE);
     //fetch_msg();
     //    uint32_t needed= dict_calc_buffer_size(3, sizeof (uint8_t), sizeof (uint8_t), 128 * sizeof (char*));
-    //    APP_LOG(APP_LOG_LEVEL_INFO, "Needed Inbox %lu, available: %lu", needed, app_message_inbox_size_maximum());
+    //    APP_LOG(APP_LOG_LEVEL_INFO, "Needed Inbox %lu, available: %lu", needed, app_message_outbox_size_maximum());
 }
 
 static void handle_init_failed(char *message) {
@@ -321,12 +321,12 @@ char *get_data_at(char* data, int row, int col, char dest[], int maxLength) {
 int send_message_with_string(uint8_t msgCode, uint8_t stringKey1, char *string1,
         uint8_t stringKey2, char *string2) {
 
-    if(!bluetooth_connection_service_peek()){
+    if (!bluetooth_connection_service_peek()) {
         preloader_init();
         preloader_set_no_connect();
         return 0;
     }
-    
+
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
     if (iter == NULL) {
@@ -342,6 +342,11 @@ int send_message_with_string(uint8_t msgCode, uint8_t stringKey1, char *string1,
         Tuplet strData2 = TupletCString(stringKey2, string2);
         dict_write_tuplet(iter, &strData2);
     }
+
+
+    Tuplet dOffsetData = TupletInteger(APP_KEY_DATE_OFFSET, get_date_offset());
+    dict_write_tuplet(iter, &dOffsetData);
+
 
     dict_write_end(iter);
     app_message_outbox_send();
