@@ -10,8 +10,8 @@ var SETTING_DEFAULT_COUNTRY = "DefaultCountry";
 var SETTING_DEFAULT_UNIT = "DefaultUnit";
 var SETTING_FORCE_LOCATION = "ForceLocation";
 
-//var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
-var PROXY_SERVICE_URL = "http://192.168.0.9/pbmovies/proxy/";
+var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
+//var PROXY_SERVICE_URL = "http://192.168.0.9/pbmovies/proxy/";
 
 var MIN_SPLASH_TIME = 500;
 var MAX_DATA_LENGTH = 240;
@@ -28,7 +28,7 @@ var DISTANCE_KM_IN_M = 0.001;
 
 var PRELOAD_WAIT_TIME = 2000;
 
-var KEY_PRELOAD = "preloadData1.2";
+var KEY_PRELOAD = "preloadData13";
 var KEY_DEVICE_ID = "deviceId";
 var KEY_SECRET_KEY = "secretKey";
 var DAYS_TO_BROWSE = 5;
