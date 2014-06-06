@@ -355,7 +355,6 @@ var PBMovies = function(initDoneCallback) {
                 }
 
             }, function(e) {
-
                 if (retries++ < 3) {
                     console.log("Retrying... [" + retries + "] previous failed: " + JSON.stringify(e));
                     messageHandler.sendData(msgCode, data, ++currentPage, raw, retries);
@@ -373,6 +372,15 @@ var PBMovies = function(initDoneCallback) {
         }
     };
 
+    var clean = function(record){
+        for(var i in record){
+            if(typeof record[i] === "string" && (record[i].indexOf(DELIMETER_FIELD) > -1 || record[i].indexOf(DELIMETER_RECORD) > -1)){
+                record[i] = record[i].replace(DELIMETER_FIELD, "/").replace(DELIMETER_RECORD, " ").trim();
+            }
+                
+        }
+        return record;
+    };
 
     var showtimeUtils = {
         //"id", "time", "type", "link"
@@ -436,6 +444,7 @@ var PBMovies = function(initDoneCallback) {
                 //"id,name,address,distance_m"
                 theatre = theatres[i];
                 theatre[3] = theatreUtils.formatDistance(theatre[3]);
+                theatre = clean(theatre);
                 records.push(theatre.join(DELIMETER_FIELD));
             }
             return records.join(DELIMETER_RECORD);
@@ -456,6 +465,7 @@ var PBMovies = function(initDoneCallback) {
                     movie[4] = !movie[4].trim().length ? "NR" : movie[4];
                     movie[4] = movie[4].replace(/(Not Rated)|(Unrated)/i, "NR");
                     movie[5] = Math.min(Math.round(parseFloat(movie[5]) * 100), 99);
+                    movie = clean(movie);
                 } catch (e) {
                     console.log("Error " + movie[4] + "__" + e.message);
                 }
