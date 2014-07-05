@@ -765,7 +765,7 @@ function serializeData(data) {
 
 
 function currentTimeInMs() {
-    return Date.now();
+    return new Date().getTime();
 }
 
 function transferImageBytes(bytes, chunkSize, successCb, failureCb) {
@@ -902,7 +902,7 @@ function dateYmd(ts) {
 }
 function dateYmdWithOffset(o) {
     o = o || 0;
-    return dateYmd(Date.now() + o  * 86400000);
+    return dateYmd(currentTimeInMs() + o  * 86400000);
 }
 function utf8_encode(a) {
     if (a === null || typeof a === 'undefined') {
