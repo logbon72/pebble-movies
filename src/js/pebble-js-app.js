@@ -22,7 +22,7 @@ var DELIMETER_RECORD = "\t";
 var MAX_PAGES = 10;
 
 var DISTANCE_UNIT_KM = "km";
-var DISTANCE_UNIT_MILES = "mi";
+//var DISTANCE_UNIT_MILES = "mi";
 var DISTANCE_MILE_IN_M = 0.000621371;
 var DISTANCE_KM_IN_M = 0.001;
 
@@ -43,16 +43,16 @@ var showtimeTypeMask = {
 };
 
 var pebbleMessagesIn = {
-    initFailed: 0
-    , startApp: 1
-    , connectionError: 2
-    , movies: 3
-    , theatres: 4
-    , theatreMovies: 5
-    , movieTheatres: 6
-    , showtimes: 7
-    , noData: 8
-    , qrCode: 9
+    initFailed: 0, 
+    startApp: 1, 
+    connectionError: 2,
+    movies: 3,
+    theatres: 4, 
+    theatreMovies: 5,
+    movieTheatres: 6,
+    showtimes: 7,
+    noData: 8,
+    qrCode: 9
 };
 
 var pebbleMessagesOut = {
@@ -60,12 +60,65 @@ var pebbleMessagesOut = {
     getMovies: 1,
     getTheatres: 2,
     getTheatreMovies: 3,
-    getMovieTheatres: 4
-    , getShowtimes: 5
-    , getQrCode: 6
+    getMovieTheatres: 4,
+    getShowtimes: 5,
+    getQrCode: 6
 };
 
+/**
+ * 
+ * @type PBMovies.service
+ */
+var movieService;
 
+
+/**
+ * 
+ * @param {string} url
+ * @param {type} method
+ * @param {type} data
+ * @param {type} successHandler
+ * @param {type} errorHandler
+ * @returns {undefined}
+ */
+var makeRequest = function(url, method, data, successHandler, errorHandler) {
+    var response, startTime = currentTimeInMs();
+    var xhr = new XMLHttpRequest();
+    xhr.open(method || 'GET', url, true);
+    data = data ? serializeData(data) : null;
+    if (method === "POST") {
+        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        if (data) {
+            xhr.setRequestHeader("Content-length", data.length);
+        }
+        xhr.setRequestHeader("Connection", "close");
+    }
+
+    xhr.onreadystatechange = function(e) {
+        if (xhr.readyState === 4) {
+            console.log("Request completed in " + (currentTimeInMs() - startTime) + "ms");
+            console.log("HTTP Status: " + xhr.status);
+            if (xhr.status === 200) {
+                //console.log(xhr.responseText);
+                if (successHandler) {
+                    //console.log("Received Mime: "+xhr.getResponseHeader('content-type'));
+                    if (xhr.getResponseHeader('content-type').match(/image|octet|stream/)) {
+                        response = xhr.responseText;
+                    } else {
+                        response = JSON.parse(xhr.responseText);
+                    }
+                    successHandler(response, xhr);
+                }
+            } else {
+                console.log("Error");
+                if (errorHandler) {
+                    errorHandler(xhr);
+                }
+            }
+        }
+    };
+    xhr.send(data);
+};
 /**
  * 
  * @param {function} initDoneCallback description
@@ -339,10 +392,10 @@ var PBMovies = function(initDoneCallback) {
             //console.log("Sending page " + currentPage + " of " + totalPages);
             var offset = (currentPage - 1) * MAX_DATA_LENGTH;
             var outData = {
-                "code": msgCode
-                , "data": data.substring(offset, MAX_DATA_LENGTH * currentPage)
-                , "page": currentPage
-                , "totalPages": totalPages
+                "code": msgCode,
+                "data": data.substring(offset, MAX_DATA_LENGTH * currentPage),
+                "page": currentPage,
+                "totalPages": totalPages
             };
             console.log("Sending page " + currentPage + " of " + totalPages + " Length = " + outData.data.length);
 
@@ -411,9 +464,9 @@ var PBMovies = function(initDoneCallback) {
             var min = d.getMinutes();
             var hours = d.getHours();
             var hoursHp = hours % 12 || 12;
-            return (hoursHp > 9 ? hoursHp : "0" + hoursHp) + ":"
-                    + (min > 9 ? min : "0" + min)
-                    + (hours >= 12 ? "PM" : "AM");
+            return (hoursHp > 9 ? hoursHp : "0" + hoursHp) + ":"+
+                    (min > 9 ? min : "0" + min)+ 
+                    (hours >= 12 ? "PM" : "AM");
 
         }
     };
@@ -506,7 +559,7 @@ var PBMovies = function(initDoneCallback) {
             var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
             var urlData = {token: service.signRequest(), 'date': currentDate, 'version': CURRENT_VERSION, 'dateOffset': dateOffset};
             var forceLocation = parseInt(movieService.get(SETTING_FORCE_LOCATION, false, "0"));
-            for (i in locationInfo) {
+            for (var i in locationInfo) {
                 if (locationInfo.hasOwnProperty(i) && locationInfo[i]) {
                     if (!(i === 'latlng' && forceLocation)) {
                         urlData[i] = locationInfo[i];
@@ -617,13 +670,6 @@ var PBMovies = function(initDoneCallback) {
     return service;
 };
 
-//the pebble app itself
-/**
- * 
- * @type PBMovies.service
- */
-var movieService;
-
 var initFunction = function(sends) {
     //var timeSinceLaunch, timeStarted = currentTimeInMs();
     sends = sends || 1;
@@ -644,6 +690,7 @@ var initFunction = function(sends) {
     });
     //movieService.unStore("secretKey");
 };
+//the pebble app itself
 
 Pebble.addEventListener("ready", function(e) {
     initFunction();
@@ -676,8 +723,8 @@ Pebble.addEventListener("webviewclosed", function(e) {
     }
 
     if (changed) {
-        for (var i = 0; i < DAYS_TO_BROWSE; i++) {
-            movieService.uncache(KEY_PRELOAD, i);
+        for (var j = 0; j < DAYS_TO_BROWSE; j++) {
+            movieService.uncache(KEY_PRELOAD, j);
         }
         movieService.loadLoactionInfo();
     }
@@ -689,8 +736,8 @@ Pebble.addEventListener("webviewclosed", function(e) {
 Pebble.addEventListener("showConfiguration", function() {
     console.log("showing configuration");
     var proxyUrl = movieService.proxy('settings', {
-        'unit': movieService.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM)
-        , 'forceLocation': movieService.get(SETTING_FORCE_LOCATION, false, "0")
+        'unit': movieService.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM), 
+        'forceLocation': movieService.get(SETTING_FORCE_LOCATION, false, "0")
     }, null, null, true);
     console.log("opening settings url: " + proxyUrl);
     Pebble.openURL(proxyUrl);
@@ -704,7 +751,7 @@ function serializeData(data) {
         }
 
         var parts = [];
-        for (i in data) {
+        for (var i in data) {
             if (data.hasOwnProperty(i)) {
                 parts.push(i + "=" + encodeURIComponent(data[i]));
             }
@@ -722,13 +769,13 @@ function currentTimeInMs() {
 function transferImageBytes(bytes, chunkSize, successCb, failureCb) {
     var retries = 0;
 
-    success = function() {
+    var success = function() {
         console.log("Success cb=" + successCb);
         if (successCb !== undefined) {
             successCb();
         }
     };
-    failure = function(e) {
+    var failure = function(e) {
         console.log("Failure cb=" + failureCb);
         if (failureCb !== undefined) {
             failureCb(e);
@@ -736,7 +783,7 @@ function transferImageBytes(bytes, chunkSize, successCb, failureCb) {
     };
 
     // This function sends chunks of data.
-    sendChunk = function(start) {
+    var sendChunk = function(start) {
         var txbuf = bytes.slice(start, start + chunkSize);
 
         console.log("Sending " + txbuf.length + " bytes - starting at offset " + start);
@@ -810,53 +857,7 @@ function downloadBinaryResource(imageURL, callback, errorCallback) {
     req.send(null);
 }
 
-/**
- * 
- * @param {string} url
- * @param {type} method
- * @param {type} data
- * @param {type} successHandler
- * @param {type} errorHandler
- * @returns {undefined}
- */
-var makeRequest = function(url, method, data, successHandler, errorHandler) {
-    var response, startTime = currentTimeInMs();
-    var xhr = new XMLHttpRequest();
-    xhr.open(method || 'GET', url, true);
-    data = data ? serializeData(data) : null;
-    if (method === "POST") {
-        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        if (data) {
-            xhr.setRequestHeader("Content-length", data.length);
-        }
-        xhr.setRequestHeader("Connection", "close");
-    }
 
-    xhr.onreadystatechange = function(e) {
-        if (xhr.readyState === 4) {
-            console.log("Request completed in " + (currentTimeInMs() - startTime) + "ms");
-            console.log("HTTP Status: " + xhr.status);
-            if (xhr.status === 200) {
-                //console.log(xhr.responseText);
-                if (successHandler) {
-                    //console.log("Received Mime: "+xhr.getResponseHeader('content-type'));
-                    if (xhr.getResponseHeader('content-type').match(/image|octet|stream/)) {
-                        response = xhr.responseText;
-                    } else {
-                        response = JSON.parse(xhr.responseText);
-                    }
-                    successHandler(response, xhr);
-                }
-            } else {
-                console.log("Error");
-                if (errorHandler) {
-                    errorHandler(xhr);
-                }
-            }
-        }
-    };
-    xhr.send(data);
-};
 
 function objectValues(obj, exclude) {
     var op = [];
@@ -986,7 +987,7 @@ function sha1(c) {
             break;
         case 3:
             i = c.charCodeAt(p - 3) << 24 | c.charCodeAt(p - 2) << 16 | c.charCodeAt(p - 1) << 8 | 0x80;
-            break
+            break;
     }
     q.push(i);
     while ((q.length % 16) != 14) {
