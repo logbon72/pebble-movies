@@ -635,6 +635,8 @@ var PBMovies = function(initDoneCallback) {
 
             if (payload.dateOffset !== undefined) {
                 dateOffset = payload.dateOffset;
+            }else{
+                dateOffset = 0;
             }
             //console.log("Handling message... "+JSON.stringify(payload));
             for (var i in pebbleMessagesOut) {
@@ -899,7 +901,8 @@ function dateYmd(ts) {
     return t.getFullYear() + "-" + mm + "-" + dd;
 }
 function dateYmdWithOffset(o) {
-    return dateYmd(Date.now() + o * 86400000);
+    o = o || 0;
+    return dateYmd(Date.now() + o  * 86400000);
 }
 function utf8_encode(a) {
     if (a === null || typeof a === 'undefined') {
