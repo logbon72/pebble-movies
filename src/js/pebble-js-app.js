@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140705.01;
+var CURRENT_VERSION = 20140708.01;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -11,7 +11,6 @@ var SETTING_DEFAULT_UNIT = "DefaultUnit";
 var SETTING_FORCE_LOCATION = "ForceLocation";
 
 var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
-//var PROXY_SERVICE_URL = "http://192.168.0.9/pbmovies/proxy/";
 
 var MIN_SPLASH_TIME = 500;
 var MAX_DATA_LENGTH = 240;
@@ -173,7 +172,8 @@ var PBMovies = function(initDoneCallback) {
 
     var register = function() {
         var deviceUUID = Pebble.getAccountToken();
-        //console.log("UUID: " + deviceUUID);
+        console.log("UUID: " + deviceUUID);
+        //console.log("Registering device...");
         service.proxy('register', {'device_uuid': deviceUUID}, function(resp) {
             service.store(KEY_SECRET_KEY, secretKey = resp.device.secret_key);
             service.store(KEY_DEVICE_ID, deviceId = resp.device.id);
@@ -558,7 +558,8 @@ var PBMovies = function(initDoneCallback) {
         proxy: function(command, data, successCallback, errorCallback, urlOnly) {
             var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
             var urlData = {token: service.signRequest(), 'date': currentDate, 'version': CURRENT_VERSION, 'dateOffset': dateOffset};
-            var forceLocation = parseInt(movieService.get(SETTING_FORCE_LOCATION, false, "0"));
+            var forceLocation = parseInt(service.get(SETTING_FORCE_LOCATION, false, "0"));
+            
             for (var i in locationInfo) {
                 if (locationInfo.hasOwnProperty(i) && locationInfo[i]) {
                     if (!(i === 'latlng' && forceLocation)) {
@@ -566,7 +567,6 @@ var PBMovies = function(initDoneCallback) {
                     }
                 }
             }
-
             var url = PROXY_SERVICE_URL + command + "?" + serializeData(urlData);
             var reqData = method === 'POST' ? data : null;
             if (method === 'GET' && data) {
@@ -576,7 +576,7 @@ var PBMovies = function(initDoneCallback) {
                 return url;
             }
             console.log("Making proxy command for- " + command.toUpperCase() + " Method");
-            //console.log("URL: " + url);
+            console.log("URL: " + url);
             return makeRequest(url, method, reqData, successCallback, errorCallback);
         },
         signRequest: function() {
@@ -675,7 +675,7 @@ var PBMovies = function(initDoneCallback) {
 var initFunction = function(sends) {
     //var timeSinceLaunch, timeStarted = currentTimeInMs();
     sends = sends || 1;
-    movieService = new PBMovies(function() {
+    movieService = movieService || new PBMovies(function() {
         //timeSinceLaunch = currentTimeInMs() - timeStarted;
         setTimeout(function() {
             Pebble.sendAppMessage({
