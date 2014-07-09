@@ -1,4 +1,4 @@
-var CURRENT_VERSION = 20140708.01;
+var CURRENT_VERSION = 20140709.01;
 var CACHE_EXPIRY = 1800000;
 
 var LOCATION_EXPIRY = 1200000;
@@ -179,10 +179,10 @@ var PBMovies = function(initDoneCallback) {
             service.store(KEY_DEVICE_ID, deviceId = resp.device.id);
             registerDone();
         }, function(xhr) {
-            //console.log("Response: " + xhr.responseText);
+            console.log("Response: " + xhr.responseText);
             Pebble.sendAppMessage({
-                "status": 0,
-                "message": "Connection error"
+                "code": 0
+                //"message": "Connection error"
             });
         });
     };

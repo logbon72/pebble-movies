@@ -114,6 +114,12 @@ void splash_screen_set_status_text(char *text) {
     text_layer_set_text(splashScreen.statusText, text);
 }
 
+void splash_screen_set_init_failed() {
+    if (splashScreen.statusText) {
+        text_layer_set_text(splashScreen.statusText, "Server Error");
+    }
+}
+
 void splash_screen_hide() {
     splashScreen.loading = 0;
     window_stack_remove(splashScreen.window, false);

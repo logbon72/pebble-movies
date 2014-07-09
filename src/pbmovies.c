@@ -13,7 +13,7 @@
 #define JS_DATA_PER_SEND 240
 
 static void handle_start_app(void);
-static void handle_init_failed(char *message);
+static void handle_init_failed();
 static void handle_data_received(uint8_t, uint8_t, uint8_t, Tuple *);
 static void close_wait(void *);
 
@@ -182,7 +182,7 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 
     switch (msgType) {
         case PB_MSG_IN_INIT_FAILED:
-            handle_init_failed(message->value->cstring);
+            handle_init_failed();
             break;
         case PB_MSG_IN_START_APP:
             handle_start_app();
@@ -229,9 +229,9 @@ void app_message_init() {
     //    APP_LOG(APP_LOG_LEVEL_INFO, "Needed Inbox %lu, available: %lu", needed, app_message_outbox_size_maximum());
 }
 
-static void handle_init_failed(char *message) {
+static void handle_init_failed() {
     splash_screen_set_loading(0);
-    splash_screen_set_status_text(message);
+    splash_screen_set_init_failed();
 }
 
 static void handle_start_app() {
