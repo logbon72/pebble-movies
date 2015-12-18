@@ -7,6 +7,17 @@
  * Created on March 19, 2014, 1:50 AM
  */
 
+/**
+ * Buffer to hold showtimes
+ */
+char *SHOWTIMES_BUFFER;
+char *MOVIES_BUFFER;
+char *THEATRES_BUFFER;
+
+#define SHOWTIMES_BUFFER_MAX_SIZE 780
+#define MOVIES_BUFFER_MAX_SIZE 2048
+#define THEATRES_BUFFER_MAX_SIZE 1240
+
 enum APP_KEYS {
     APP_KEY_MSG_CODE = 0x0, // TUPLE_INT (0,1)
     APP_KEY_MESSAGE = 0x1, // TUPLE_CSTRING

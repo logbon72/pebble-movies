@@ -70,15 +70,15 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
 
             case PB_MSG_IN_THEATRES:
             case PB_MSG_IN_MOVIE_THEATRES:
-                messageBuffer = THEATRES_LIST;
+                messageBuffer = THEATRES_BUFFER;
                 break;
             case PB_MSG_IN_MOVIES:
             case PB_MSG_IN_THEATRE_MOVIES:
-                messageBuffer = MOVIES_LIST;
+                messageBuffer = MOVIES_BUFFER;
                 break;
 
             case PB_MSG_IN_SHOWTIMES:
-                messageBuffer = SHOWTIMES_LIST;
+                messageBuffer = SHOWTIMES_BUFFER;
                 break;
 
             case PB_MSG_IN_QR_CODE:
@@ -129,23 +129,23 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
 
             case PB_MSG_IN_THEATRES:
                 //APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", strlen(THEATRES_LIST));
-                theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeTheatres, NULL);
+                theatres_screen_initialize(record_count(THEATRES_BUFFER, DELIMITER_RECORD), TheatreUIModeTheatres, NULL);
                 break;
 
             case PB_MSG_IN_MOVIE_THEATRES:
                 //APP_LOG(APP_LOG_LEVEL_INFO, "Records: (Length=%d) ", strlen(THEATRES_LIST));
-                theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeMovieThetares, movie.id);
+                theatres_screen_initialize(record_count(THEATRES_BUFFER, DELIMITER_RECORD), TheatreUIModeMovieThetares, movie.id);
                 break;
 
             case PB_MSG_IN_MOVIES:
                 //APP_LOG(APP_LOG_LEVEL_INFO, "Movie Records: (Length=%d) ", strlen(MOVIES_LIST));
                 //theatres_screen_initialize(record_count(THEATRES_LIST, DELIMITER_RECORD), TheatreUIModeTheatres, NULL);
-                movies_screen_init(record_count(MOVIES_LIST, DELIMITER_RECORD), MovieUIModeMovies, NULL);
+                movies_screen_init(record_count(MOVIES_BUFFER, DELIMITER_RECORD), MovieUIModeMovies, NULL);
                 break;
 
             case PB_MSG_IN_THEATRE_MOVIES:
                 //APP_LOG(APP_LOG_LEVEL_INFO, "TheatreMovie Records: (Length=%d) ", strlen(MOVIES_LIST));
-                movies_screen_init(record_count(MOVIES_LIST, DELIMITER_RECORD), MovieUIModeTheatreMovies, currentTheatre.id);
+                movies_screen_init(record_count(MOVIES_BUFFER, DELIMITER_RECORD), MovieUIModeTheatreMovies, currentTheatre.id);
                 break;
 
             case PB_MSG_IN_SHOWTIMES:
@@ -369,6 +369,5 @@ void remove_top_window(int count) {
     for (int i = 0; i < count; i++) {
         win = window_stack_get_top_window();
         window_stack_remove(win, false);
-        window_destroy(win);
     }
 }

@@ -44,10 +44,10 @@ static void set_current_theatre(uint16_t theatreIndex) {
     }
 
 
-    get_data_at(THEATRES_LIST, theatreIndex, 0, currentTheatre.id, THEATRE_FLD_SIZE_ID);
-    get_data_at(THEATRES_LIST, theatreIndex, 1, currentTheatre.name, THEATRE_FLD_SIZE_NAME);
-    get_data_at(THEATRES_LIST, theatreIndex, 2, currentTheatre.address, THEATRE_FLD_SIZE_ADDR);
-    get_data_at(THEATRES_LIST, theatreIndex, 3, currentTheatre.distance, THEATRE_FLD_SIZE_DISTANCE);
+    get_data_at(THEATRES_BUFFER, theatreIndex, 0, currentTheatre.id, THEATRE_FLD_SIZE_ID);
+    get_data_at(THEATRES_BUFFER, theatreIndex, 1, currentTheatre.name, THEATRE_FLD_SIZE_NAME);
+    get_data_at(THEATRES_BUFFER, theatreIndex, 2, currentTheatre.address, THEATRE_FLD_SIZE_ADDR);
+    get_data_at(THEATRES_BUFFER, theatreIndex, 3, currentTheatre.distance, THEATRE_FLD_SIZE_DISTANCE);
 
     //set address - id, name, address, distance_m
     text_layer_set_text(theatresUI.address, currentTheatre.address);
@@ -140,6 +140,9 @@ static void theatres_screen_unload() {
     text_layer_destroy(theatresUI.name);
     //text_layer_destroy(theatresUI.titleBar);
     action_bar_layer_destroy(theatresUI.actionBar);
+    if(theatresUI.window){
+        window_destroy(theatresUI.window);
+    }
 }
 
 //static void theatre_screen_appear(Window* window) {

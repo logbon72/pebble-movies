@@ -34,13 +34,13 @@ static struct MovieUIScreen {
 } moviesUI;
 
 static void set_movie_at_index(uint8_t movieIndex) {
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_ID, movie.id, MOVIE_FLD_LENGTH_ID);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_TITLE, movie.title, MOVIE_FLD_LENGTH_TITLE);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_GENRE, movie.genre, MOVIE_FLD_LENGTH_GENRE);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_CRITC_RATING, movie.criticRating, MOVIE_FLD_LENGTH_CRITC_RATING);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_USER_RATING, movie.userRating, MOVIE_FLD_LENGTH_USER_RATING);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_RUNTIME, movie.runtime, MOVIE_FLD_LENGTH_RUNTIME);
-    get_data_at(MOVIES_LIST, movieIndex, MOVIE_FLD_IDX_RATED, movie.rated, MOVIE_FLD_LENGTH_RATED);
+    get_data_at(MOVIES_BUFFER, movieIndex, MOVIE_FLD_IDX_ID, movie.id, MOVIE_FLD_LENGTH_ID);
+    get_data_at(MOVIES_BUFFER, movieIndex, MOVIE_FLD_IDX_TITLE, movie.title, MOVIE_FLD_LENGTH_TITLE);
+    get_data_at(MOVIES_BUFFER, movieIndex, MOVIE_FLD_IDX_GENRE, movie.genre, MOVIE_FLD_LENGTH_GENRE);
+    get_data_at(MOVIES_BUFFER, movieIndex, MOVIE_FLD_IDX_CRITC_RATING, movie.criticRating, MOVIE_FLD_LENGTH_CRITC_RATING);
+    get_data_at(MOVIES_BUFFER, movieIndex, MOVIE_FLD_IDX_USER_RATING, movie.userRating, MOVIE_FLD_LENGTH_USER_RATING);
+    get_data_at(MOVIES_BUFFER, movieIndex, MOVIE_FLD_IDX_RUNTIME, movie.runtime, MOVIE_FLD_LENGTH_RUNTIME);
+    get_data_at(MOVIES_BUFFER, movieIndex, MOVIE_FLD_IDX_RATED, movie.rated, MOVIE_FLD_LENGTH_RATED);
 }
 
 static void set_current(uint8_t movieIndex) {
@@ -124,6 +124,10 @@ static void movies_screen_unload() {
     gbitmap_destroy(moviesUI.selectIcon);
 
     action_bar_layer_destroy(moviesUI.actionBar);
+    
+    if(moviesUI.window){
+        window_destroy(moviesUI.window);
+    }
 }
 
 static void draw_outline_around(Layer *layer, GContext* ctx) {

@@ -82,6 +82,9 @@ static void home_screen_unload() {
     for (uint16_t i = 0; i < ARRAY_LENGTH(menuIcons); i++) {
         gbitmap_destroy(menuIcons[i]);
     }
+    if(homeScreen.window){
+        window_destroy(homeScreen.window);
+    }
 }
 
 void home_screen_init(void) {

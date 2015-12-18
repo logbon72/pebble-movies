@@ -114,6 +114,9 @@ static void start_screen_load(Window *window) {
 
 static void start_screen_unload() {
     simple_menu_layer_destroy(startScreen.menu_layer);
+    if(startScreen.window){
+        window_destroy(startScreen.window);
+    }
 }
 
 void start_screen_init() {

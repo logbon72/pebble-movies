@@ -24,7 +24,4 @@ struct TheatreRecord {
     char distance[THEATRE_FLD_SIZE_DISTANCE];
 } currentTheatre;
 
-
-char THEATRES_LIST[1416];
-
 void theatres_screen_initialize(int, enum TheatreUiMode, char*);

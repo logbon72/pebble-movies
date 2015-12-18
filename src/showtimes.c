@@ -17,7 +17,7 @@ static const char* typeIMAX = "IMAX 3D";
 
 #define MAX_SHOWTIMES_COUNT 30
 
-#define SHOWTIME_FLD_LENGTH_ID 10
+#define SHOWTIME_FLD_LENGTH_ID 8
 #define SHOWTIME_FLD_LENGTH_TYPE 2
 #define SHOWTIME_FLD_LENGTH_TIME 8
 #define SHOWTIME_FLD_LENGTH_LINK 2
@@ -47,13 +47,13 @@ static struct ShowtimesUIScreen {
 
 static struct Showtime get_showtime_at(uint8_t row) {
     struct Showtime showtime;
-    get_data_at(SHOWTIMES_LIST, row, SHOWTIME_FLD_IDX_ID,
+    get_data_at(SHOWTIMES_BUFFER, row, SHOWTIME_FLD_IDX_ID,
             showtime.id, SHOWTIME_FLD_LENGTH_ID);
-    get_data_at(SHOWTIMES_LIST, row, SHOWTIME_FLD_IDX_LINK,
+    get_data_at(SHOWTIMES_BUFFER, row, SHOWTIME_FLD_IDX_LINK,
             showtime.link, SHOWTIME_FLD_LENGTH_LINK);
-    get_data_at(SHOWTIMES_LIST, row, SHOWTIME_FLD_IDX_TIME,
+    get_data_at(SHOWTIMES_BUFFER, row, SHOWTIME_FLD_IDX_TIME,
             showtime.time, SHOWTIME_FLD_LENGTH_TIME);
-    get_data_at(SHOWTIMES_LIST, row, SHOWTIME_FLD_IDX_TYPE,
+    get_data_at(SHOWTIMES_BUFFER, row, SHOWTIME_FLD_IDX_TYPE,
             showtime.type, SHOWTIME_FLD_LENGTH_TYPE);
 
     return showtime;
@@ -142,7 +142,7 @@ void showtimes_init() {
     remove_top_window(2);
     showtimesUI.window = window_create();
 
-    showtimesUI.total = record_count(SHOWTIMES_LIST, DELIMITER_RECORD);
+    showtimesUI.total = record_count(SHOWTIMES_BUFFER, DELIMITER_RECORD);
     if (showtimesUI.total > MAX_SHOWTIMES_COUNT) {
         showtimesUI.total = MAX_SHOWTIMES_COUNT;
     }
