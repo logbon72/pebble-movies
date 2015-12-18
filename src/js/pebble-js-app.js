@@ -494,7 +494,7 @@
         }
         var prefUnit = service.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM);
         var conversion = prefUnit === DISTANCE_UNIT_KM ? DISTANCE_KM_IN_M : DISTANCE_MILE_IN_M;
-        return Number(conversion * distNum).toPrecision(2) + prefUnit;
+        return Number(conversion * distNum).toFixed(1) + prefUnit;
       },
       convertToData: function (theatres) {
         var theatre, records = [];
