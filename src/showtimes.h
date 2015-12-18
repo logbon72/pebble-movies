@@ -1,5 +1,5 @@
 #pragma once
 
-char SHOWTIMES_LIST[700];
+char SHOWTIMES_LIST[800];
 
 void showtimes_init();

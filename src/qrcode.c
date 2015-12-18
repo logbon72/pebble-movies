@@ -12,7 +12,6 @@ static struct QrCodeScreen {
 
 static void screen_load(Window *window) {
 
-    window_set_fullscreen(window, true);
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
     //title layer

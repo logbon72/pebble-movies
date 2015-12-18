@@ -17,7 +17,7 @@ static const char* typeIMAX = "IMAX 3D";
 
 #define MAX_SHOWTIMES_COUNT 30
 
-#define SHOWTIME_FLD_LENGTH_ID 8
+#define SHOWTIME_FLD_LENGTH_ID 10
 #define SHOWTIME_FLD_LENGTH_TYPE 2
 #define SHOWTIME_FLD_LENGTH_TIME 8
 #define SHOWTIME_FLD_LENGTH_LINK 2
@@ -108,7 +108,7 @@ static void menu_select_handler(MenuLayer *menu_layer, MenuIndex *ci, void *data
 }
 
 static void showtimes_load(Window *window) {
-    Layer *windowLayer = window_get_root_layer(window);
+    Layer *windowLayer = window_get_root_layer(showtimesUI.window);
     GRect bounds = layer_get_bounds(windowLayer);
     //window_set_background_color(window, GColorBlack);
 
@@ -124,7 +124,7 @@ static void showtimes_load(Window *window) {
     });
 
     // Bind the menu layer's click config provider to the window for interactivity
-    menu_layer_set_click_config_onto_window(showtimesUI.menuLayer, window);
+    menu_layer_set_click_config_onto_window(showtimesUI.menuLayer, showtimesUI.window);
 
     // Add it to the window for display
     layer_add_child(windowLayer, menu_layer_get_layer(showtimesUI.menuLayer));
@@ -138,7 +138,8 @@ static void showtimes_unload(Window *window) {
 }
 
 void showtimes_init() {
-
+    preloader_set_hidden(NULL);
+    remove_top_window(2);
     showtimesUI.window = window_create();
 
     showtimesUI.total = record_count(SHOWTIMES_LIST, DELIMITER_RECORD);
@@ -160,7 +161,7 @@ void showtimes_init() {
     window_set_window_handlers(showtimesUI.window, (WindowHandlers) {
         .load = showtimes_load,
         .unload = showtimes_unload,
-        .appear = preloader_set_hidden,
+        //.appear = preloader_set_hidden,
     });
 
 

@@ -16,7 +16,7 @@ enum APP_KEYS {
     APP_KEY_MOVIE_ID = 16, // TUPLE_CSTRING
     APP_KEY_THEATRE_ID = 32, // TUPLE_CSTRING
     APP_KEY_SHOWTIME_ID = 64, // TUPLE_CSTRING
-    APP_KEY_DATE_OFFSET = 128, 
+    APP_KEY_DATE_OFFSET = 128,
     //APP_KEY_CITY_KEY = 0x2,         // TUPLE_CSTRING
 };
 
@@ -65,3 +65,4 @@ short int find_offset_of_nth_occurence(char*, char, char, int, short int);
 char *get_data_at(char* data, int row, int col, char*, int);
 int send_message_with_string(uint8_t, uint8_t, char *, uint8_t, char *);
 void load_showtimes_for_movie_theatre();
+void remove_top_window(int count);

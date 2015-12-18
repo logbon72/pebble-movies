@@ -15,7 +15,7 @@
 static void handle_start_app(void);
 static void handle_init_failed();
 static void handle_data_received(uint8_t, uint8_t, uint8_t, Tuple *);
-static void close_wait(void *);
+//static void close_wait(void *);
 
 static char *messageBuffer;
 static uint8_t *bytesBuffer;
@@ -360,5 +360,15 @@ void load_showtimes_for_movie_theatre() {
         if (result) {
             preloader_init();
         }
+    }
+}
+
+
+void remove_top_window(int count) {
+    Window *win;
+    for (int i = 0; i < count; i++) {
+        win = window_stack_get_top_window();
+        window_stack_remove(win, false);
+        window_destroy(win);
     }
 }
