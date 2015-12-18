@@ -1,7 +1,7 @@
 #include <pebble.h>
 #include "pbmovies.h"
 #include "preloader.h"
-#include "qrcode.h"
+#include "qr_screen.h"
 
 static struct QrCodeScreen {
     TextLayer *titleLayer;
@@ -35,6 +35,12 @@ static void screen_unload() {
     bitmap_layer_destroy(qrCodeScreen.qrCodeLayer);
     gbitmap_destroy(qrCodeScreen.qrCode);
     text_layer_destroy(qrCodeScreen.titleLayer);
+    if (qrCodeScreen.window) {
+        window_destroy(qrCodeScreen.window);
+    }
+    if (QR_CODE_BUFFER) {
+        free(QR_CODE_BUFFER);
+    }
 }
 
 static void screen_appear(Window *window) {

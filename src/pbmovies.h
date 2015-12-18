@@ -14,10 +14,13 @@ char CurrentDateStr[17];
 char *SHOWTIMES_BUFFER;
 char *MOVIES_BUFFER;
 char *THEATRES_BUFFER;
+uint8_t *QR_CODE_BUFFER;
 
 #define SHOWTIMES_BUFFER_MAX_SIZE 800
 #define MOVIES_BUFFER_MAX_SIZE 2048
 #define THEATRES_BUFFER_MAX_SIZE 1240
+#define QR_CODE_BUFFER_MAX_SIZE 2400
+
 
 enum APP_KEYS {
     APP_KEY_MSG_CODE = 0x0, // TUPLE_INT (0,1)
@@ -34,6 +37,7 @@ enum APP_KEYS {
 
 #define ARR_COUNT(x)  (sizeof(x) / sizeof(x[0]))
 #define BUFFER_CREATE(size, maxSize)  ((char*) malloc(((size > maxSize ? maxSize : size)+1) * sizeof (char)))
+#define BUFFER_CREATE_BYTE(size, maxSize)  ((uint8_t*) malloc((size > maxSize ? maxSize : size) * sizeof (uint8_t)))
 
 //now define all message codes
 

@@ -1,6 +1,8 @@
 /* global Pebble */
 (function (pebble) {
 
+  var NUMBER_RADIX = 32;
+
   var CURRENT_VERSION = 20140709.01;
   var CACHE_EXPIRY = 1800000;
 
@@ -66,6 +68,16 @@
     getShowtimes: 5,
     getQrCode: 6
   };
+
+  var numberEncode = function (num) {
+    return Number(num).toString(NUMBER_RADIX);
+  };
+
+  var numberDecode = function (str) {
+    return parseInt(str, NUMBER_RADIX);
+  };
+
+
 
   /**
    * 
@@ -353,23 +365,22 @@
         });
       },
       getQrCode: function (dataIn) {
-        var showtimeId = dataIn.showtimeId;
-        //console.log("In Here for getQrCode");
+        var showtimeId = numberDecode(dataIn.showtimeId);
+        console.log('Making QR Code call for showtime: ' + showtimeId + " original: " + dataIn.showtimeId);
         var resourceUrl = service.proxy('qr', {"showtime_id": showtimeId}, null, messageHandler.handleErrors, true);
-        //console.log("Resource URL: " + resourceUrl);
+        console.log("Resource URL: " + resourceUrl);
         downloadBinaryResource(resourceUrl, function (bytes) {
           transferImageBytes(bytes, MAX_DATA_LENGTH,
               function () {
-                console.log("Done!");
+                console.log("Done sending image!");
                 //transferInProgress = false;
               },
               function (e) {
-                //console.log("Failed! " + e);
-                //transferInProgress = false;
+                console.log('Sending failed: ' + JSON.stringify(e));
               }
           );
         }, function (e) {
-          console.log(e);
+          console.log('QRCode could not downloaded');
         });
       },
       handleErrors: function (err) {
@@ -395,7 +406,7 @@
 
         var totalPages = Math.ceil(data.length / MAX_DATA_LENGTH);
         var offset = (page - 1) * MAX_DATA_LENGTH;
-        
+
         var outData = {
           "code": msgCode,
           "page": page,
@@ -404,7 +415,6 @@
         };
 
         console.log("Sending " + offset + " to " + (offset + outData.data.length) + " bytes of " + data.length);
-
         pebble.sendAppMessage(outData, function (e) {
           retries = 0;
           //Advance to next  page.
@@ -448,7 +458,7 @@
         for (var i = 0; i < showtimes.length; i++) {
           var showtime = [];
           var time = showtimeUtils.formatTime(currentDate, showtimes[i][1]);
-          showtime.push(showtimes[i][0]);
+          showtime.push(numberEncode(showtimes[i][0]));
           showtime.push(showtimeTypeMask[showtimes[i][2]]);
           showtime.push(time);
           showtime.push(showtimes[i][3] ? 1 : 0);
@@ -785,6 +795,7 @@
         successCb();
       }
     };
+
     var failure = function (e) {
       console.log("Failure cb=" + failureCb);
       if (failureCb !== undefined) {
@@ -794,47 +805,33 @@
 
     // This function sends chunks of data.
     var sendChunk = function (start) {
-      var txbuf = bytes.slice(start, start + chunkSize);
-
-      console.log("Sending " + txbuf.length + " bytes - starting at offset " + start);
-      var page = Math.round(start / chunkSize) + 1;
-      var totalPages = Math.ceil(bytes.length / chunkSize);
+      var ending = start + chunkSize;
+      console.log('Sending ' + start + ' to ' + ending + ' of ' + bytes.length + 'bytes');
+      var page = Math.floor(start / chunkSize) + 1;
       pebble.sendAppMessage({
-        "data": txbuf,
+        "data": bytes.slice(start, ending),
         "code": pebbleMessagesIn.qrCode,
         "page": page,
-        "totalPages": totalPages
-      },
-          function (e) {
-            // If there is more data to send - send it.
-            if (bytes.length > start + chunkSize) {
-              sendChunk(start + chunkSize);
-            }
-// Otherwise we are done sending. Send closing message.
-//            else {
-//                Pebble.sendAppMessage({"NETIMAGE_END": "done"}, success, failure);
-//            }
-          },
-          // Failed to send message - Retry a few times.
-              function (e) {
-                if (retries++ < 3) {
-                  console.log("Got a nack for chunk #" + start + " - Retry...");
-                  sendChunk(start);
-                } else {
-                  failure(e);
-                }
-              }
-          );
-        };
+        "size": bytes.length
+      }, function (e) {
+        // If there is more data to send - send it.
+        if (bytes.length > (start + chunkSize)) {
+          sendChunk(start + chunkSize);
+        } else {
+          success();
+        }
+      }, function (e) {//retry
+        if (retries++ < 3) {
+          console.log("Got a nack for chunk #" + start + " - Retry...");
+          sendChunk(start);
+        } else {
+          failure(e);
+        }
+      }
+      );
+    };
 
     sendChunk(0);
-    // Let the pebble app know how much data we want to send.
-//  Pebble.sendAppMessage({"NETIMAGE_BEGIN": bytes.length },
-//    function (e) {
-//      // success - start sending
-//      sendChunk(0);
-//    }, failure);
-
   }
 
   function downloadBinaryResource(imageURL, callback, errorCallback) {

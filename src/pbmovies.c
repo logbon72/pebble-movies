@@ -6,7 +6,7 @@
 #include "preloader.h"
 #include "movies.h"
 #include "showtimes.h"
-#include "qrcode.h"
+#include "qr_screen.h"
 #include "start.h"
 
 #define MSG_CODE_NO_WAIT 0xff
@@ -22,16 +22,6 @@ static uint8_t *bytesBuffer;
 AppTimer *inboxWaitTimer;
 uint8_t lastPage = 0;
 static uint32_t totalReceived = 0;
-
-//static void close_wait(void *context) {
-//    if (currentWaiter == MSG_CODE_NO_WAIT) {
-//        handle_data_received(currentWaiter, 0, 0, NULL);
-//    }
-//
-//    if (inboxWaitTimer) {
-//        app_timer_cancel(inboxWaitTimer);
-//    }
-//}
 
 static void reset_message_receiver() {
     messageBuffer = NULL;
@@ -77,6 +67,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
                 break;
 
             case PB_MSG_IN_QR_CODE:
+                QR_CODE_BUFFER = BUFFER_CREATE_BYTE(size, QR_CODE_BUFFER_MAX_SIZE);
                 bytesBuffer = QR_CODE_BUFFER;
                 break;
 
@@ -96,13 +87,11 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
             ++totalReceived;
         }
     } else {
-        //memcpy(ctx->data + ctx->index, tuple->value->data, tuple->length);
-        //APP_LOG(APP_LOG_LEVEL_DEBUG,"Data length: %d", tuple->length);
         memcpy(QR_CODE_BUFFER + (page - 1) * JS_DATA_PER_SEND, tuple->value->data, tuple->length);
         totalReceived += tuple->length;
     }
 
-    APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
+    //APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
     
     if (totalReceived >= size) {
         if (stringDataMode && messageBuffer) {
