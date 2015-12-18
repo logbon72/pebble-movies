@@ -306,7 +306,7 @@
       },
       getMovieTheatres: function (dataIn) {
         messageHandler.checkPreloaded(function (data) {
-          var movieId = dataIn.movieId;
+          var movieId = numberDecode(dataIn.movieId);
           var movie = findIdInList(data.movies, movieId);
           //theatres is index 7
           var theatres = movie ? findIdsInList(data.theatres, movie[7]) : [];
@@ -329,7 +329,7 @@
       },
       getTheatreMovies: function (dataIn) {
         messageHandler.checkPreloaded(function (data) {
-          var theatreId = dataIn.theatreId;
+          var theatreId = numberDecode(dataIn.theatreId);
           var theatre = findIdInList(data.theatres, theatreId);
           //console.log("T: "+JSON.stringify(theatre)+ " Movies: "+ JSON.stringify(theatre[4]));
           var movies = theatre ? findIdsInList(data.movies, theatre[4], 0) : [];
@@ -358,7 +358,7 @@
       },
       getShowtimes: function (dataIn) {
         messageHandler.checkPreloaded(function (data) {
-          var key = dataIn.theatreId + "." + dataIn.movieId;
+          var key = numberDecode(dataIn.theatreId) + "." + numberDecode(dataIn.movieId);
           //console.log("Showtime Key: " + key);
           var showtimes = data.showtimes ? data.showtimes[key] : [];
           showtimeUtils.processShowtimes(showtimes || []);
@@ -512,6 +512,7 @@
         for (var i = 0; i < theatres.length; i++) {
           //"id,name,address,distance_m"
           theatre = theatres[i];
+          theatre[0] = numberEncode(theatre[0]);
           theatre[3] = theatreUtils.formatDistance(theatre[3]);
           theatre = theatre.slice(0, 4);
           theatre = clean(theatre);
@@ -529,6 +530,7 @@
           //id,title,genre,user_rating,rated,critic_rating,runtime                    
           try {
             movie = movies[i];
+            movie[0] = numberEncode(movie[0]);
             movie[2] = movie[2] || " ";
             movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
             movie[4] = movie[4] ? movie[4] + "" : "NR";
