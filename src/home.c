@@ -50,8 +50,8 @@ static void home_screen_load(Window *window) {
     GRect bounds = layer_get_bounds(window_layer);
     //window_set_background_color(window, GColorBlack);
 
-    menuIcons[0] = gbitmap_create_with_resource(RESOURCE_ID_ICON_FILM);
-    menuIcons[1] = gbitmap_create_with_resource(RESOURCE_ID_ICON_THEATRE);
+    menuIcons[0] = gbitmap_create_with_resource(RESOURCE_ID_ICON_MOVIES);
+    menuIcons[1] = gbitmap_create_with_resource(RESOURCE_ID_ICON_THEATRES);
 
     menuItems[0] = (SimpleMenuItem){
         .title = "Movies",
