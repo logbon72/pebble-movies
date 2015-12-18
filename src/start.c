@@ -1,10 +1,3 @@
-/* 
- * File:   start.c
- * Author: intelworx
- *
- * Created on May 29, 2014, 8:32 AM
- */
-
 #include <pebble.h>
 #include "pbmovies.h"
 #include "home.h"

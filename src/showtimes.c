@@ -143,22 +143,14 @@ static void showtimes_unload(Window *window) {
 
 void showtimes_init() {
     preloader_set_hidden(NULL);
-    remove_top_window(2);
+    //remove_top_window(2);
     showtimesUI.window = window_create();
 
     showtimesUI.total = record_count(SHOWTIMES_BUFFER, DELIMITER_RECORD);
     if (showtimesUI.total > MAX_SHOWTIMES_COUNT) {
         showtimesUI.total = MAX_SHOWTIMES_COUNT;
     }
-
-    //    for (uint8_t i = 0; i < showtimesUI.total; i++) {
-    //        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_ID, showtimes[i].id, SHOWTIME_FLD_LENGTH_ID);
-    //        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_LINK, showtimes[i].link, SHOWTIME_FLD_LENGTH_LINK);
-    //        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_TIME, showtimes[i].time, SHOWTIME_FLD_LENGTH_TIME);
-    //        get_data_at(SHOWTIMES_LIST, i, SHOWTIME_FLD_IDX_TYPE, showtimes[i].type, SHOWTIME_FLD_LENGTH_TYPE);
-    //    }
-
-
+    
     showtimesUI.canBuyIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_CAN_BUY);
     showtimesUI.cantBuyIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_CANT_BUY);
 

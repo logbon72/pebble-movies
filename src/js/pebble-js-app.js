@@ -790,14 +790,12 @@
     var retries = 0;
 
     var success = function () {
-      console.log("Success cb=" + successCb);
       if (successCb !== undefined) {
         successCb();
       }
     };
 
     var failure = function (e) {
-      console.log("Failure cb=" + failureCb);
       if (failureCb !== undefined) {
         failureCb(e);
       }
