@@ -13,7 +13,7 @@
     "message": 1,
     "data": 2,
     "page": 4,
-    "totalPages": 8,
+    "size": 8,
     "movieId": 16,
     "theatreId": 32,
     "showtimeId": 64,

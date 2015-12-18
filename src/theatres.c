@@ -140,9 +140,10 @@ static void theatres_screen_unload() {
     text_layer_destroy(theatresUI.name);
     //text_layer_destroy(theatresUI.titleBar);
     action_bar_layer_destroy(theatresUI.actionBar);
-    if(theatresUI.window){
+    if (theatresUI.window) {
         window_destroy(theatresUI.window);
     }
+    free(THEATRES_BUFFER);
 }
 
 //static void theatre_screen_appear(Window* window) {

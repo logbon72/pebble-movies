@@ -288,7 +288,7 @@
           if (movies && movies.length > 0) {
             messageHandler.sendData(pebbleMessagesIn.movies, movieUtils.convertToData(movies), 1, 0, 0);
           } else {
-            messageHandler.sendNoData("No movies at the moment");
+            messageHandler.sendNoData("No movies now");
           }
         });
       },
@@ -301,7 +301,7 @@
           if (theatres.length > 0) {
             messageHandler.sendData(pebbleMessagesIn.movieTheatres, theatreUtils.convertToData(theatres));
           } else {
-            messageHandler.sendNoData("No theatres near you");
+            messageHandler.sendNoData("No theatres now");
           }
         });
       },
@@ -311,7 +311,7 @@
           if (theatres && theatres.length > 0) {
             messageHandler.sendData(pebbleMessagesIn.theatres, theatreUtils.convertToData(theatres));
           } else {
-            messageHandler.sendNoData("No theatres near you");
+            messageHandler.sendNoData("No theatres now");
           }
         });
       },
@@ -325,7 +325,7 @@
           if (movies.length > 0) {
             messageHandler.sendData(pebbleMessagesIn.theatreMovies, movieUtils.convertToData(movies));
           } else {
-            messageHandler.sendNoData("No movies at the moment");
+            messageHandler.sendNoData("No movies now");
           }
         });
       },
@@ -387,36 +387,36 @@
         }
         return data;
       },
-      sendData: function (msgCode, data, currentPage, raw, retries) {
+      sendData: function (msgCode, data, page, retries) {
         lastPbMsgIn = msgCode;
-        if (!retries) {
-          retries = 0;
-        }
+        retries = retries || 0;
+        page = page || 1;
         data = messageHandler.truncateData(data);
-        if (!currentPage)
-          currentPage = 1;
 
         var totalPages = Math.ceil(data.length / MAX_DATA_LENGTH);
-        //console.log("Sending page " + currentPage + " of " + totalPages);
-        var offset = (currentPage - 1) * MAX_DATA_LENGTH;
+        var offset = (page - 1) * MAX_DATA_LENGTH;
+        
         var outData = {
           "code": msgCode,
-          "data": data.substring(offset, MAX_DATA_LENGTH * currentPage),
-          "page": currentPage,
-          "totalPages": totalPages
+          "page": page,
+          "data": data.substring(offset, MAX_DATA_LENGTH * page),
+          "size": data.length
         };
-        console.log("Sending page " + currentPage + " of " + totalPages + " Length = " + outData.data.length);
+
+        console.log("Sending " + offset + " to " + (offset + outData.data.length) + " bytes of " + data.length);
+
         pebble.sendAppMessage(outData, function (e) {
           retries = 0;
-          //console.log("Delivered");
-          if (currentPage < totalPages && currentPage < MAX_PAGES) {
-            messageHandler.sendData(msgCode, data, ++currentPage, raw, retries);
+          //Advance to next  page.
+          if (page < totalPages && page < MAX_PAGES) {
+            messageHandler.sendData(msgCode, data, page + 1, retries);
           }
 
         }, function (e) {
           if (retries++ < 3) {
+            //retry same page
             console.log("Retrying... [" + retries + "] previous failed: " + JSON.stringify(e));
-            messageHandler.sendData(msgCode, data, ++currentPage, raw, retries);
+            messageHandler.sendData(msgCode, data, page, retries);
           } else {
             console.log("Failed...");
           }

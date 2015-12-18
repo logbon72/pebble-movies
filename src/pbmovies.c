@@ -14,14 +14,14 @@
 
 static void handle_start_app(void);
 static void handle_init_failed();
-static void handle_data_received(uint8_t, uint8_t, uint8_t, Tuple *);
+static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, Tuple *tuple);
 //static void close_wait(void *);
 
 static char *messageBuffer;
 static uint8_t *bytesBuffer;
 AppTimer *inboxWaitTimer;
 uint8_t lastPage = 0;
-static int totalDataReceived = 0;
+static uint32_t totalReceived = 0;
 
 //static void close_wait(void *context) {
 //    if (currentWaiter == MSG_CODE_NO_WAIT) {
@@ -36,27 +36,19 @@ static int totalDataReceived = 0;
 static void reset_message_receiver() {
     messageBuffer = NULL;
     bytesBuffer = NULL;
-    totalDataReceived = lastPage = 0;
+    totalReceived = lastPage = 0;
     if (inboxWaitTimer) {
         app_timer_cancel(inboxWaitTimer);
     }
     //currentWaiter = MSG_CODE_NO_WAIT;
 }
 
-static void handle_data_received(uint8_t msgCode, uint8_t page,
-        uint8_t totalPages, Tuple *tuple) {
-
-    //APP_LOG(APP_LOG_LEVEL_INFO, "Received data Length: %d, Page %d of %d", dataLength, page, totalPages);
-    //    if (page != 1 && page != totalPages && !(currentWaiter || currentWaiter != msgCode)) {
-    //        //APP_LOG(APP_LOG_LEVEL_INFO, "Message discarded");
-    //        //reset_mssage_receiver();
-    //        return;
-    //    }
+static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, Tuple *tuple) {
 
     if (!tuple || page != lastPage + 1) {
         //APP_LOG(APP_LOG_LEVEL_WARNING, "Message broken");
         lastPage = 0;
-        totalDataReceived = 0;
+        totalReceived = 0;
         messageBuffer = NULL;
         preloader_set_timed_out();
         return;
@@ -70,14 +62,17 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
 
             case PB_MSG_IN_THEATRES:
             case PB_MSG_IN_MOVIE_THEATRES:
+                THEATRES_BUFFER = BUFFER_CREATE(size, THEATRES_BUFFER_MAX_SIZE);
                 messageBuffer = THEATRES_BUFFER;
                 break;
             case PB_MSG_IN_MOVIES:
             case PB_MSG_IN_THEATRE_MOVIES:
+                MOVIES_BUFFER = BUFFER_CREATE(size, MOVIES_BUFFER_MAX_SIZE);
                 messageBuffer = MOVIES_BUFFER;
                 break;
 
             case PB_MSG_IN_SHOWTIMES:
+                SHOWTIMES_BUFFER = BUFFER_CREATE(size, SHOWTIMES_BUFFER_MAX_SIZE);
                 messageBuffer = SHOWTIMES_BUFFER;
                 break;
 
@@ -95,28 +90,21 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
     //if terminating with null, then fail
     if (stringDataMode) {
         char *data = tuple->value->cstring;
-        while (!*data == '\0') {
+        while (*data != '\0') {
             *(messageBuffer++) = *data;
             ++data;
-            ++totalDataReceived;
+            ++totalReceived;
         }
     } else {
         //memcpy(ctx->data + ctx->index, tuple->value->data, tuple->length);
         //APP_LOG(APP_LOG_LEVEL_DEBUG,"Data length: %d", tuple->length);
         memcpy(QR_CODE_BUFFER + (page - 1) * JS_DATA_PER_SEND, tuple->value->data, tuple->length);
-        totalDataReceived += tuple->length;
+        totalReceived += tuple->length;
     }
 
-
-    //    if (inboxWaitTimer) {
-    //        app_timer_cancel(inboxWaitTimer);
-    //        inboxWaitTimer = NULL;
-    //    }
-    //free(tuple->value->data);
-    //free(tuple->value);
-
-
-    if (page == totalPages) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
+    
+    if (totalReceived >= size) {
         if (stringDataMode && messageBuffer) {
             *messageBuffer = '\0';
         }
@@ -161,12 +149,6 @@ static void handle_data_received(uint8_t msgCode, uint8_t page,
                 //APP_LOG(APP_LOG_LEVEL_DEBUG, "Message Code %d needs no handling", msgCode);
         }
     }
-    //  else {
-    //        //some more messages expected, wait
-    //        currentWaiter = msgCode;
-    //        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting timer...");
-    //        inboxWaitTimer = app_timer_register(MSG_INTERVAL_WAIT_MS, close_wait, NULL);
-    //    }
 
 }
 
@@ -174,11 +156,11 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
     Tuple *msgCode = dict_find(iter, APP_KEY_MSG_CODE);
     const uint8_t msgType = msgCode->value->uint8;
 
-    Tuple *message, *page, *totalPages, *data;
+    Tuple *message, *page, *size, *data;
     message = dict_find(iter, APP_KEY_MESSAGE);
     page = dict_find(iter, APP_KEY_PAGE);
     data = dict_find(iter, APP_KEY_DATA);
-    totalPages = dict_find(iter, APP_KEY_TOTAL_PAGES);
+    size = dict_find(iter, APP_KEY_SIZE);
 
     switch (msgType) {
         case PB_MSG_IN_INIT_FAILED:
@@ -194,8 +176,7 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
         case PB_MSG_IN_THEATRE_MOVIES:
         case PB_MSG_IN_SHOWTIMES:
         case PB_MSG_IN_QR_CODE:
-            handle_data_received(msgType, page->value->uint8, totalPages->value->uint8,
-                    data);
+            handle_data_received(msgType, page->value->uint8, size->value->uint32, data);
             break;
 
         case PB_MSG_IN_CONNECTION_ERROR:
@@ -362,7 +343,6 @@ void load_showtimes_for_movie_theatre() {
         }
     }
 }
-
 
 void remove_top_window(int count) {
     Window *win;

@@ -124,7 +124,7 @@ static void movies_screen_unload() {
     gbitmap_destroy(moviesUI.selectIcon);
 
     action_bar_layer_destroy(moviesUI.actionBar);
-    
+    free(MOVIES_BUFFER);
     if(moviesUI.window){
         window_destroy(moviesUI.window);
     }

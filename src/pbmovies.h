@@ -10,11 +10,12 @@
 /**
  * Buffer to hold showtimes
  */
+char CurrentDateStr[17];
 char *SHOWTIMES_BUFFER;
 char *MOVIES_BUFFER;
 char *THEATRES_BUFFER;
 
-#define SHOWTIMES_BUFFER_MAX_SIZE 780
+#define SHOWTIMES_BUFFER_MAX_SIZE 800
 #define MOVIES_BUFFER_MAX_SIZE 2048
 #define THEATRES_BUFFER_MAX_SIZE 1240
 
@@ -23,7 +24,7 @@ enum APP_KEYS {
     APP_KEY_MESSAGE = 0x1, // TUPLE_CSTRING
     APP_KEY_DATA = 0x2, // TUPLE_CSTRING
     APP_KEY_PAGE = 0x4, // TUPLE_CSTRING
-    APP_KEY_TOTAL_PAGES = 0x8, // TUPLE_CSTRING
+    APP_KEY_SIZE = 0x8, // TUPLE_CSTRING
     APP_KEY_MOVIE_ID = 16, // TUPLE_CSTRING
     APP_KEY_THEATRE_ID = 32, // TUPLE_CSTRING
     APP_KEY_SHOWTIME_ID = 64, // TUPLE_CSTRING
@@ -32,6 +33,7 @@ enum APP_KEYS {
 };
 
 #define ARR_COUNT(x)  (sizeof(x) / sizeof(x[0]))
+#define BUFFER_CREATE(size, maxSize)  ((char*) malloc(((size > maxSize ? maxSize : size)+1) * sizeof (char)))
 
 //now define all message codes
 
@@ -65,11 +67,7 @@ enum PbMsgOut {
 #define DELIMITER_RECORD '\t'
 #define MSG_INTERVAL_WAIT_MS 10000
 
-char CurrentDateStr[17];
-
 void app_message_init(void);
-//char** str_split(char*, const char, int*);
-//char *strdup(const char *);
 short int record_count(char*, const char);
 char *str_dup_range(char*, int, int, char *);
 short int find_offset_of_nth_occurence(char*, char, char, int, short int);

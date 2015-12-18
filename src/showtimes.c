@@ -17,7 +17,7 @@ static const char* typeIMAX = "IMAX 3D";
 
 #define MAX_SHOWTIMES_COUNT 30
 
-#define SHOWTIME_FLD_LENGTH_ID 8
+#define SHOWTIME_FLD_LENGTH_ID 12
 #define SHOWTIME_FLD_LENGTH_TYPE 2
 #define SHOWTIME_FLD_LENGTH_TIME 8
 #define SHOWTIME_FLD_LENGTH_LINK 2
@@ -135,6 +135,10 @@ static void showtimes_unload(Window *window) {
     gbitmap_destroy(showtimesUI.canBuyIcon);
     gbitmap_destroy(showtimesUI.cantBuyIcon);
     showtimesUI.total = 0;
+    if(showtimesUI.window){
+        window_destroy(showtimesUI.window);
+    }
+    free(SHOWTIMES_BUFFER);
 }
 
 void showtimes_init() {
