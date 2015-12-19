@@ -532,11 +532,11 @@
             movie = movies[i];
             movie[0] = numberEncode(movie[0]);
             movie[2] = movie[2] || " ";
-            movie[3] = Number(movie[3] * 5).toPrecision(2) + "/5";
+            movie[3] = movie[3] ? Number(movie[3] * 5).toPrecision(2) + "/5" : '0';
             movie[4] = movie[4] ? movie[4] + "" : "NR";
             movie[4] = !movie[4].trim().length ? "NR" : movie[4];
             movie[4] = movie[4].replace(/(Not Rated)|(Unrated)/i, "NR");
-            movie[5] = Math.min(Math.round(parseFloat(movie[5]) * 100), 99);
+            movie[5] = movie[5] ? Math.min(Math.round(parseFloat(movie[5]) * 100), 99) : '0';
             movie = clean(movie);
             movie = movie.slice(0, 7);
           } catch (e) {

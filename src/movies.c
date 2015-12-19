@@ -43,6 +43,11 @@ static void set_movie_at_index(uint8_t movieIndex) {
     get_data_at(MOVIES_BUFFER, movieIndex, MOVIE_FLD_IDX_RATED, movie.rated, MOVIE_FLD_LENGTH_RATED);
 }
 
+void set_visibility_text_layer(TextLayer *txtLayer, _Bool hidden){
+    Layer *l = text_layer_get_layer(txtLayer);
+    layer_set_hidden(l, hidden);
+}
+
 static void set_current(uint8_t movieIndex) {
     if (movieIndex >= moviesUI.total) {
         movieIndex = 0;
@@ -66,13 +71,26 @@ static void set_current(uint8_t movieIndex) {
     set_movie_at_index(movieIndex);
     text_layer_set_text(moviesUI.titleTxt, movie.title);
     text_layer_set_text(moviesUI.genreTxt, movie.genre);
+    
     text_layer_set_text(moviesUI.criticRatingTxt, movie.criticRating);
+    bool hideCritic  = (movie.criticRating[0] == '0' && movie.criticRating[1] == '\0');
+    set_visibility_text_layer(moviesUI.criticRatingTxt, hideCritic);
+    set_visibility_text_layer(moviesUI.criticRatingLabelTxt, hideCritic);
+    set_visibility_text_layer(moviesUI.percentLabelTxt, hideCritic);
+    
+    
     text_layer_set_text(moviesUI.userRatingTxt, movie.userRating);
+    bool hideUserRating  = (movie.userRating[0] == '0' && movie.userRating[1] == '\0');
+    set_visibility_text_layer(moviesUI.userRatingLabelTxt,hideUserRating);
+    set_visibility_text_layer(moviesUI.userRatingTxt,hideUserRating);
+    
+    
     text_layer_set_text(moviesUI.runtimeTxt, movie.runtime);
     text_layer_set_text(moviesUI.ratedTxt, movie.rated);
 
     //APP_LOG(APP_LOG_LEVEL_INFO, "Critic Rating: %s", currentMovie.criticRating);
 }
+
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (movie.id) {
