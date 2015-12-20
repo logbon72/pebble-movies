@@ -19,9 +19,11 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
 
 static char *messageBuffer;
 static uint8_t *bytesBuffer;
+static uint32_t totalReceived = 0;
+static uint32_t bufferSize = 0;
 AppTimer *inboxWaitTimer;
 uint8_t lastPage = 0;
-static uint32_t totalReceived = 0;
+
 
 static void reset_message_receiver() {
     messageBuffer = NULL;
@@ -38,7 +40,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
     if (!tuple || page != lastPage + 1) {
         //APP_LOG(APP_LOG_LEVEL_WARNING, "Message broken");
         lastPage = 0;
-        totalReceived = 0;
+        bufferSize = totalReceived = 0;
         messageBuffer = NULL;
         preloader_set_timed_out();
         return;
@@ -52,22 +54,26 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
 
             case PB_MSG_IN_THEATRES:
             case PB_MSG_IN_MOVIE_THEATRES:
-                THEATRES_BUFFER = BUFFER_CREATE(size, THEATRES_BUFFER_MAX_SIZE);
+                bufferSize = MIN_OF(size, THEATRES_BUFFER_MAX_SIZE);
+                THEATRES_BUFFER = BUFFER_CREATE(bufferSize);
                 messageBuffer = THEATRES_BUFFER;
                 break;
             case PB_MSG_IN_MOVIES:
             case PB_MSG_IN_THEATRE_MOVIES:
-                MOVIES_BUFFER = BUFFER_CREATE(size, MOVIES_BUFFER_MAX_SIZE);
+                bufferSize = MIN_OF(size, MOVIES_BUFFER_MAX_SIZE);
+                MOVIES_BUFFER = BUFFER_CREATE(bufferSize);
                 messageBuffer = MOVIES_BUFFER;
                 break;
 
             case PB_MSG_IN_SHOWTIMES:
-                SHOWTIMES_BUFFER = BUFFER_CREATE(size, SHOWTIMES_BUFFER_MAX_SIZE);
+                bufferSize = MIN_OF(size, SHOWTIMES_BUFFER_MAX_SIZE);
+                SHOWTIMES_BUFFER = BUFFER_CREATE(bufferSize);
                 messageBuffer = SHOWTIMES_BUFFER;
                 break;
 
             case PB_MSG_IN_QR_CODE:
-                QR_CODE_BUFFER = BUFFER_CREATE_BYTE(size, QR_CODE_BUFFER_MAX_SIZE);
+                bufferSize = MIN_OF(size, QR_CODE_BUFFER_MAX_SIZE);
+                QR_CODE_BUFFER = BUFFER_CREATE_BYTE(bufferSize);
                 bytesBuffer = QR_CODE_BUFFER;
                 break;
 
@@ -81,17 +87,19 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
     //if terminating with null, then fail
     if (stringDataMode) {
         char *data = tuple->value->cstring;
-        while (*data != '\0') {
+        while (*data != '\0' && totalReceived < bufferSize) {
             *(messageBuffer++) = *data;
             ++data;
             ++totalReceived;
         }
     } else {
-        memcpy(QR_CODE_BUFFER + (page - 1) * JS_DATA_PER_SEND, tuple->value->data, tuple->length);
-        totalReceived += tuple->length;
+        uint16_t bytesToCopy = (totalReceived + tuple->length) > QR_CODE_BUFFER_MAX_SIZE ? 
+            (QR_CODE_BUFFER_MAX_SIZE - totalReceived) : tuple->length;
+        memcpy(QR_CODE_BUFFER + (page - 1) * JS_DATA_PER_SEND, tuple->value->data, bytesToCopy);
+        totalReceived += bytesToCopy;
     }
 
-    //APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
+    APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
     
     if (totalReceived >= size) {
         if (stringDataMode && messageBuffer) {

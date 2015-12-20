@@ -370,7 +370,7 @@
         var resourceUrl = service.proxy('qr', {"showtime_id": showtimeId}, null, messageHandler.handleErrors, true);
         console.log("Resource URL: " + resourceUrl);
         downloadBinaryResource(resourceUrl, function (bytes) {
-          transferImageBytes(bytes, MAX_DATA_LENGTH,
+          transferBytes(bytes, MAX_DATA_LENGTH, pebbleMessagesIn.qrCode,
               function () {
                 console.log("Done sending image!");
                 //transferInProgress = false;
@@ -392,7 +392,7 @@
       },
       truncateData: function (data) {
         var maxDataLength = MAX_DATA_LENGTH * MAX_PAGES;
-        if (data.length > maxDataLength) {
+        while (byteSize(data) > maxDataLength) {
           var tmp = data.substring(0, maxDataLength);
           data = tmp.substring(0, tmp.lastIndexOf(DELIMETER_RECORD));
         }
@@ -411,16 +411,16 @@
           "code": msgCode,
           "page": page,
           "data": data.substring(offset, MAX_DATA_LENGTH * page),
-          "size": data.length
+          "size": byteSize(data)
         };
 
-        console.log("Sending " + offset + " to " + (offset + outData.data.length) + " bytes of " + data.length);
+        console.log("Sending page : " + page + " with " + byteSize(outData.data) + " bytes of " + byteSize(data));
         pebble.sendAppMessage(outData, function (e) {
           retries = 0;
           //Advance to next  page.
           if (page < totalPages && page < MAX_PAGES) {
             messageHandler.sendData(msgCode, data, page + 1, retries);
-          }
+        }
 
         }, function (e) {
           if (retries++ < 3) {
@@ -693,10 +693,8 @@
   };
 
   var initFunction = function (sends) {
-    //var timeSinceLaunch, timeStarted = currentTimeInMs();
     sends = sends || 1;
     movieService = movieService || new PBMovies(function () {
-      //timeSinceLaunch = currentTimeInMs() - timeStarted;
       window.setTimeout(function () {
         pebble.sendAppMessage({
           "code": pebbleMessagesIn.startApp
@@ -788,9 +786,9 @@
     return new Date().getTime();
   }
 
-  function transferImageBytes(bytes, chunkSize, successCb, failureCb) {
+  function transferBytes(bytes, chunkSize, msgCode, successCb, failureCb) {
     var retries = 0;
-
+    
     var success = function () {
       if (successCb !== undefined) {
         successCb();
@@ -810,7 +808,7 @@
       var page = Math.floor(start / chunkSize) + 1;
       pebble.sendAppMessage({
         "data": bytes.slice(start, ending),
-        "code": pebbleMessagesIn.qrCode,
+        "code": msgCode,
         "page": page,
         "size": bytes.length
       }, function (e) {
@@ -862,17 +860,18 @@
     req.send(null);
   }
 
-
-
-  function objectValues(obj, exclude) {
-    var op = [];
-    var toExclude = exclude || [];
-    for (var key in obj) {
-      if (obj.hasOwnProperty(key) && toExclude.indexOf(key) < 0) {
-        op.push(obj[key]);
-      }
+  function stringToBytes(str) {
+    var s = unescape(encodeURIComponent(str));
+    var bufView = [];
+    for (var i = 0, strLen = s.length; i < strLen; i++) {
+      bufView.push(s.charCodeAt(i));
     }
-    return op;
+
+    return bufView;
+  }
+  
+  function byteSize(str){
+    return window.unescape(window.encodeURIComponent(str)).length;
   }
   /**
    * 
@@ -895,7 +894,6 @@
       }
     }
   }
-
   function dateYmd(ts) {
     var t = ts ? new Date(ts) : new Date();
     var dd = t.getDate() > 9 ? t.getDate() : "0" + t.getDate();
