@@ -3,7 +3,7 @@
 
   var NUMBER_RADIX = 32;
 
-  var CURRENT_VERSION = 20151218.01;
+  var CURRENT_VERSION = 20151220.01;
   var CACHE_EXPIRY = 1800000;
 
   var LOCATION_EXPIRY = 1200000;
@@ -32,7 +32,7 @@
 
   var PRELOAD_WAIT_TIME = 2000;
 
-  var KEY_PRELOAD = "preloadData13";
+  var KEY_PRELOAD = "preloadData22";
   var KEY_DEVICE_ID = "deviceId";
   var KEY_SECRET_KEY = "secretKey";
   var DAYS_TO_BROWSE = 5;
