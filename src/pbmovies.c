@@ -99,7 +99,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
         totalReceived += bytesToCopy;
     }
 
-    APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
+    //APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
     
     if (totalReceived >= size) {
         if (stringDataMode && messageBuffer) {
