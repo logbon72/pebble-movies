@@ -7,12 +7,8 @@
 #define HEIGHT_NAME 75
 #define HEIGHT_ADDRESS 32
 #define HEIGHT_DISTANCE 14
-#define HEIGHT_PAGE 14
 #define MARGIN 5
-#define ROUND_SIZE (HEIGHT_ADDRESS+HEIGHT_NAME+HEIGHT_DISTANCE+HEIGHT_PAGE+MARGIN*2)
-#define PAGE_TEXT_SIZE 7
-
-char *pageText;
+#define ROUND_SIZE (HEIGHT_ADDRESS+HEIGHT_NAME+HEIGHT_DISTANCE+MARGIN*2)
 
 struct TheatreUI {
     Window *window;
@@ -24,7 +20,9 @@ struct TheatreUI {
 #endif
 
 #ifndef PBL_RECT
-    TextLayer *page;
+    ContentIndicator *indicator;
+    Layer *upIndicatorLayer;
+    Layer *downIndicatorLayer;
 #endif
     //TextLayer *titleBar;
     TextLayer *address;
@@ -63,8 +61,8 @@ static void set_current_theatre(uint16_t theatreIndex) {
 #endif
 
 #ifndef PBL_RECT
-    snprintf(pageText, PAGE_TEXT_SIZE, "%u/%u", (unsigned int) (theatreIndex + 1), theatresUI.total);
-    text_layer_set_text(theatresUI.page, pageText);
+    content_indicator_set_content_available(theatresUI.indicator, ContentIndicatorDirectionUp, theatreIndex > 0);
+    content_indicator_set_content_available(theatresUI.indicator, ContentIndicatorDirectionDown, theatreIndex < theatresUI.total - 1);
 #endif
 
 
@@ -208,33 +206,64 @@ static void theatres_screen_load(Window *window) {
     text_layer_set_background_color(theatresUI.distance, GColorClear);
     startY += HEIGHT_DISTANCE;
 
-    //page indicator
+    //content indicator
+    theatresUI.indicator = content_indicator_create();
 
-    theatresUI.page = text_layer_create(GRect(startX, startY, usableWidth, HEIGHT_PAGE));
-    text_layer_set_font(theatresUI.page, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
-    text_layer_set_text_alignment(theatresUI.page, GTextAlignmentCenter);
-    text_layer_set_background_color(theatresUI.page, GColorClear);
-    layer_add_child(window_layer, text_layer_get_layer(theatresUI.page));
+    theatresUI.upIndicatorLayer = layer_create(GRect(0, 0, boundsMain.size.w, STATUS_BAR_LAYER_HEIGHT));
+    theatresUI.downIndicatorLayer = layer_create(GRect(0, boundsMain.size.h - STATUS_BAR_LAYER_HEIGHT,
+            boundsMain.size.w, STATUS_BAR_LAYER_HEIGHT));
+    layer_add_child(window_layer, theatresUI.upIndicatorLayer);
+    layer_add_child(window_layer, theatresUI.downIndicatorLayer);
 
-    pageText = (char*) malloc(PAGE_TEXT_SIZE * sizeof (char));
+
+    const ContentIndicatorConfig downConfig = (ContentIndicatorConfig){
+        .layer = theatresUI.downIndicatorLayer,
+        .times_out = false,
+        .alignment = GAlignCenter,
+        .colors =
+        {
+            .foreground = THEME_COLOR_TEXT_SECONDARY,
+            .background = THEME_COLOR_BACKGROUND_SECONDARY
+        }
+    };
+
+
+    const ContentIndicatorConfig upConfig = (ContentIndicatorConfig){
+        .layer = theatresUI.upIndicatorLayer,
+        .times_out = false,
+        .alignment = GAlignCenter,
+        .colors =
+        {
+            .foreground = THEME_COLOR_TEXT_SECONDARY,
+            .background = THEME_COLOR_BACKGROUND_SECONDARY
+        }
+    };
+
+    content_indicator_configure_direction(theatresUI.indicator, ContentIndicatorDirectionUp, &upConfig);
+    content_indicator_configure_direction(theatresUI.indicator, ContentIndicatorDirectionDown, &downConfig);
+
     window_set_click_config_provider(theatresUI.window, theatre_click_config_provider);
     //then set current
     set_current_theatre(theatresUI.currentIndex);
-    
+
 }
 #endif
 
 static void theatres_screen_unload() {
     theatresUI.currentMovie = NULL;
-#ifdef PBL_RECT
+#ifndef PBL_ROUND
     gbitmap_destroy(theatresUI.upIcon);
     gbitmap_destroy(theatresUI.downIcon);
     gbitmap_destroy(theatresUI.selectIcon);
     action_bar_layer_destroy(theatresUI.actionBar);
-#else
-    free(pageText);
-    text_layer_destroy(theatresUI.page);
 #endif
+
+#ifndef PBL_RECT
+    content_indicator_destroy(theatresUI.indicator);
+    layer_destroy(theatresUI.upIndicatorLayer);
+    layer_destroy(theatresUI.downIndicatorLayer);
+#endif    
+
 
     text_layer_destroy(theatresUI.address);
     text_layer_destroy(theatresUI.distance);

@@ -20,7 +20,7 @@
 #define UI_TITLE_HEIGHT 44
 #endif
 #define UI_Y_SPACING 2
-#define UI_RUNTIME_HEIGHT 20
+#define UI_RUNTIME_HEIGHT 22
 #define UI_RATING_HEIGHT 18
 #define UI_GENRE_HEIGHT 16
 #define UI_PAGING_HEIGHT 18
@@ -28,8 +28,6 @@
 #define UI_RUNTIME_WIDTH 60
 #define UI_CRITICS_WIDTH 65
 
-
-const char *labelUsers = "Users";
 char *criticTextWithPercent;
 char *runtimeTextBuffer;
 char *usersRatingBuffer;
@@ -43,7 +41,6 @@ static struct MovieUIScreen {
     TextLayer *genreTxt;
 #ifndef PBL_ROUND
     TextLayer *ratedTxt;
-    Layer *titleUnderline;
     ActionBarLayer *actionBar;
     GBitmap *downIcon;
     GBitmap *upIcon;
@@ -51,7 +48,9 @@ static struct MovieUIScreen {
 #endif
 
 #ifndef PBL_RECT
-    TextLayer *pageTxt;
+    ContentIndicator *indicator;
+    Layer *upIndicatorLayer;
+    Layer *downIndicatorLayer;
 #endif    
 
     uint8_t total;
@@ -95,6 +94,12 @@ static void set_current(uint8_t movieIndex) {
     } else {
         action_bar_layer_clear_icon(moviesUI.actionBar, BUTTON_ID_DOWN);
     }
+#endif
+
+#ifndef PBL_RECT    
+    //should icons be shown?
+    content_indicator_set_content_available(moviesUI.indicator, ContentIndicatorDirectionUp, movieIndex > 0);
+    content_indicator_set_content_available(moviesUI.indicator, ContentIndicatorDirectionDown, movieIndex < moviesUI.total - 1);
 #endif
 
     set_movie_at_index(movieIndex);
@@ -172,7 +177,6 @@ static void movies_screen_unload() {
 
 #ifndef PBL_ROUND
     text_layer_destroy(moviesUI.ratedTxt);
-    layer_destroy(moviesUI.titleUnderline);
     gbitmap_destroy(moviesUI.downIcon);
     gbitmap_destroy(moviesUI.upIcon);
     gbitmap_destroy(moviesUI.selectIcon);
@@ -180,7 +184,9 @@ static void movies_screen_unload() {
 #endif
 
 #ifndef PBL_RECT
-    text_layer_destroy(moviesUI.pageTxt);
+    content_indicator_destroy(moviesUI.indicator);
+    layer_destroy(moviesUI.upIndicatorLayer);
+    layer_destroy(moviesUI.downIndicatorLayer);
 #endif
 
     free(MOVIES_BUFFER);
@@ -207,7 +213,7 @@ static void movies_screen_load(Window *window) {
     GRect bounds = layer_get_bounds(windowLayer);
 
     uint16_t paddingSide = 2;
-    uint16_t startY = 3;
+    uint16_t startY = 5;
 
     moviesUI.actionBar = action_bar_layer_create();
     action_bar_layer_add_to_window(moviesUI.actionBar, moviesUI.window);
@@ -220,15 +226,21 @@ static void movies_screen_load(Window *window) {
 
 
 
-    moviesUI.runtimeTxt = text_layer_create(GRect(paddingSide, startY, 60, UI_RUNTIME_HEIGHT));
+    moviesUI.runtimeTxt = text_layer_create(GRect(0, startY, 60, UI_RUNTIME_HEIGHT));
     text_layer_set_font(moviesUI.runtimeTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-    //text_layer_set_text_alignment(moviesUI.runtimeTxt, GTextAlignmentRight);
+    
+    text_layer_set_background_color(moviesUI.runtimeTxt, THEME_COLOR_BACKGROUND_PRIMARY);
+    text_layer_set_text_color(moviesUI.runtimeTxt, GColorWhite);
+
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.runtimeTxt));
 
     //rated text
     moviesUI.ratedTxt = text_layer_create(GRect(allowedWidth - 60, startY, 60, UI_RUNTIME_HEIGHT));
     text_layer_set_font(moviesUI.ratedTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
     text_layer_set_text_alignment(moviesUI.ratedTxt, GTextAlignmentRight);
+    text_layer_set_background_color(moviesUI.ratedTxt, THEME_COLOR_BACKGROUND_PRIMARY);
+    text_layer_set_text_color(moviesUI.ratedTxt, GColorWhite);
+
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.ratedTxt));
 
     UI_INC_Y(startY, UI_RUNTIME_HEIGHT);
@@ -243,10 +255,6 @@ static void movies_screen_load(Window *window) {
     text_layer_set_overflow_mode(moviesUI.titleTxt, GTextOverflowModeFill);
     text_layer_enable_screen_text_flow_and_paging(moviesUI.titleTxt, 2);
 
-    //title  outline
-    moviesUI.titleUnderline = layer_create(GRect(titleGrect.origin.x - 2, titleGrect.origin.y - 2, titleGrect.size.w + 4, titleGrect.size.h + 4));
-    layer_set_update_proc(moviesUI.titleUnderline, draw_outline_around);
-    layer_add_child(windowLayer, moviesUI.titleUnderline);
 
     UI_INC_Y(startY, UI_TITLE_HEIGHT);
 
@@ -327,7 +335,7 @@ static void movies_screen_load(Window *window) {
     startY += UI_TITLE_HEIGHT;
 
     //metacrtic label
-    moviesUI.criticRatingLabelTxt = text_layer_create(GRect(0, startY, allowedWidth, UI_RATING_HEIGHT));
+    moviesUI.criticRatingLabelTxt = text_layer_create(GRect(startX, startY, allowedWidth, UI_RATING_HEIGHT));
     text_layer_set_background_color(moviesUI.criticRatingLabelTxt, GColorClear);
     text_layer_set_text_color(moviesUI.criticRatingLabelTxt, THEME_COLOR_TEXT_PRIMARY);
     text_layer_set_overflow_mode(moviesUI.criticRatingLabelTxt, GTextOverflowModeFill);
@@ -337,7 +345,7 @@ static void movies_screen_load(Window *window) {
 
     startY += UI_RATING_HEIGHT;
     //user rating label
-    moviesUI.userRatingLabelTxt = text_layer_create(GRect(0, startY, allowedWidth, UI_RATING_HEIGHT));
+    moviesUI.userRatingLabelTxt = text_layer_create(GRect(startX, startY, allowedWidth, UI_RATING_HEIGHT));
     text_layer_set_background_color(moviesUI.userRatingLabelTxt, GColorClear);
     text_layer_set_text_color(moviesUI.userRatingLabelTxt, THEME_COLOR_TEXT_PRIMARY);
     text_layer_set_font(moviesUI.userRatingLabelTxt, fonts_get_system_font(FONT_KEY_GOTHIC_14));
@@ -352,6 +360,42 @@ static void movies_screen_load(Window *window) {
     text_layer_set_text_color(moviesUI.genreTxt, THEME_COLOR_TEXT_PRIMARY);
     text_layer_set_background_color(moviesUI.genreTxt, GColorClear);
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.genreTxt));
+
+    //content indicator
+    moviesUI.indicator = content_indicator_create();
+
+    moviesUI.upIndicatorLayer = layer_create(GRect(0, 0, bounds.size.w, STATUS_BAR_LAYER_HEIGHT));
+    moviesUI.downIndicatorLayer = layer_create(GRect(0, bounds.size.h - STATUS_BAR_LAYER_HEIGHT,
+            bounds.size.w, STATUS_BAR_LAYER_HEIGHT));
+    layer_add_child(windowLayer, moviesUI.upIndicatorLayer);
+    layer_add_child(windowLayer, moviesUI.downIndicatorLayer);
+
+
+    const ContentIndicatorConfig downConfig = (ContentIndicatorConfig){
+        .layer = moviesUI.downIndicatorLayer,
+        .times_out = false,
+        .alignment = GAlignCenter,
+        .colors =
+        {
+            .foreground = THEME_COLOR_TEXT_PRIMARY,
+            .background = THEME_COLOR_BACKGROUND_PRIMARY
+        }
+    };
+    
+    
+    const ContentIndicatorConfig upConfig = (ContentIndicatorConfig){
+        .layer = moviesUI.upIndicatorLayer,
+        .times_out = false,
+        .alignment = GAlignCenter,
+        .colors =
+        {
+            .foreground = THEME_COLOR_TEXT_PRIMARY,
+            .background = THEME_COLOR_BACKGROUND_PRIMARY
+        }
+    };
+    
+    content_indicator_configure_direction(moviesUI.indicator, ContentIndicatorDirectionUp, &upConfig);
+    content_indicator_configure_direction(moviesUI.indicator, ContentIndicatorDirectionDown, &downConfig);
 
     //set click handler
     window_set_click_config_provider(window, movie_click_config_provider);
