@@ -30,7 +30,7 @@ static void update_square_layer(Layer *layer, GContext* ctx) {
     } else {
         currentAngle += ANGLE_STEPS;
     }
-    graphics_context_set_fill_color(ctx, THEME_COLOR_BACKGROUND_SECONDARY);
+    graphics_context_set_fill_color(ctx, THEME_COLOR_OUTLINE_PRIMARY);
     graphics_fill_radial(ctx, bounds, GOvalScaleModeFillCircle, STROKE_SIZE, DEG_TO_TRIGANGLE(0), DEG_TO_TRIGANGLE(currentAngle));
 
     if (currentAngle >= 360) {

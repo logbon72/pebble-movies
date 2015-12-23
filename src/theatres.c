@@ -62,7 +62,6 @@ static void set_current_theatre(uint16_t theatreIndex) {
 #endif
 
 #ifndef PBL_RECT
-    pageText = (char*) malloc(PAGE_TEXT_SIZE * sizeof (char));
     snprintf(pageText, PAGE_TEXT_SIZE, "%u/%u", (unsigned int) (theatreIndex + 1), theatresUI.total);
     text_layer_set_text(theatresUI.page, pageText);
 #endif
@@ -136,6 +135,7 @@ static void theatres_screen_load(Window *window) {
 
     //now add action bar!!!
     theatresUI.actionBar = action_bar_layer_create();
+    action_bar_layer_set_background_color(theatresUI.actionBar, THEME_COLOR_BACKGROUND_SECONDARY);
     action_bar_layer_add_to_window(theatresUI.actionBar, theatresUI.window);
 
     //icons
@@ -143,16 +143,15 @@ static void theatres_screen_load(Window *window) {
     theatresUI.downIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_DOWN);
 
     if (theatresUI.currentMode == TheatreUIModeTheatres) {
-        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE_BLACK);
+        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE_WHITE);
     } else {
-        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME_BLACK);
+        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME_WHITE);
     }
 
-    action_bar_layer_set_background_color(theatresUI.actionBar, THEME_COLOR_BACKGROUND_SECONDARY);
     action_bar_layer_set_icon(theatresUI.actionBar, BUTTON_ID_SELECT, theatresUI.selectIcon);
     action_bar_layer_set_click_config_provider(theatresUI.actionBar, theatre_click_config_provider);
-    //action_bar_layer_set_background_color(theatresUI.actionBar, GColorWhite);
-
+    
+    pageText = (char*) malloc(PAGE_TEXT_SIZE * sizeof (char));
     //then set current
     set_current_theatre(theatresUI.currentIndex);
 }
