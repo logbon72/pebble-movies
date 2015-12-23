@@ -12,9 +12,9 @@ enum TheatreUiMode {
 };
 //struct TheatreUI movieTheatresUI;
 
-#define THEATRE_FLD_SIZE_ID 7
-#define THEATRE_FLD_SIZE_NAME 33
-#define THEATRE_FLD_SIZE_ADDR 33
+#define THEATRE_FLD_SIZE_ID 9
+#define THEATRE_FLD_SIZE_NAME 49
+#define THEATRE_FLD_SIZE_ADDR 49
 #define THEATRE_FLD_SIZE_DISTANCE 9
 
 struct TheatreRecord {

@@ -3,9 +3,28 @@
 #include "theatres.h"
 #include "preloader.h"
 
+#define HEIGHT_NAME 75
+#define HEIGHT_ADDRESS 32
+#define HEIGHT_DISTANCE 14
+#define HEIGHT_PAGE 14
+#define MARGIN 5
+#define ROUND_SIZE (HEIGHT_ADDRESS+HEIGHT_NAME+HEIGHT_DISTANCE+HEIGHT_PAGE+MARGIN*2)
+#define PAGE_TEXT_SIZE 7
+
+char *pageText;
+
 struct TheatreUI {
     Window *window;
+#ifndef PBL_ROUND
     ActionBarLayer *actionBar;
+    GBitmap *upIcon;
+    GBitmap *downIcon;
+    GBitmap *selectIcon;
+#endif
+
+#ifndef PBL_RECT
+    TextLayer *page;
+#endif
     //TextLayer *titleBar;
     TextLayer *address;
     TextLayer *name;
@@ -16,9 +35,6 @@ struct TheatreUI {
     uint16_t total;
     //char **current;
     char *currentMovie;
-    GBitmap *upIcon;
-    GBitmap *downIcon;
-    GBitmap *selectIcon;
 };
 
 static struct TheatreUI theatresUI;
@@ -31,6 +47,7 @@ static void set_current_theatre(uint16_t theatreIndex) {
     theatresUI.currentIndex = theatreIndex;
 
     //should icons be shown?
+#ifndef PBL_ROUND
     if (theatreIndex > 0) {
         action_bar_layer_set_icon(theatresUI.actionBar, BUTTON_ID_UP, theatresUI.upIcon);
     } else {
@@ -42,6 +59,14 @@ static void set_current_theatre(uint16_t theatreIndex) {
     } else {
         action_bar_layer_clear_icon(theatresUI.actionBar, BUTTON_ID_DOWN);
     }
+#endif
+
+#ifndef PBL_RECT
+    pageText = (char*) malloc(PAGE_TEXT_SIZE * sizeof (char));
+    snprintf(pageText, PAGE_TEXT_SIZE, "%u/%u", (unsigned int) (theatreIndex + 1), theatresUI.total);
+    text_layer_set_text(theatresUI.page, pageText);
+#endif
+
 
 
     get_data_at(THEATRES_BUFFER, theatreIndex, 0, currentTheatre.id, THEATRE_FLD_SIZE_ID);
@@ -86,6 +111,7 @@ static void theatre_click_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
 }
+#ifndef PBL_ROUND
 
 static void theatres_screen_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
@@ -117,11 +143,12 @@ static void theatres_screen_load(Window *window) {
     theatresUI.downIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_DOWN);
 
     if (theatresUI.currentMode == TheatreUIModeTheatres) {
-        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE_WHITE);
+        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE_BLACK);
     } else {
-        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME_WHITE);
+        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME_BLACK);
     }
 
+    action_bar_layer_set_background_color(theatresUI.actionBar, THEME_COLOR_BACKGROUND_SECONDARY);
     action_bar_layer_set_icon(theatresUI.actionBar, BUTTON_ID_SELECT, theatresUI.selectIcon);
     action_bar_layer_set_click_config_provider(theatresUI.actionBar, theatre_click_config_provider);
     //action_bar_layer_set_background_color(theatresUI.actionBar, GColorWhite);
@@ -129,17 +156,90 @@ static void theatres_screen_load(Window *window) {
     //then set current
     set_current_theatre(theatresUI.currentIndex);
 }
+#endif
+
+#ifndef PBL_RECT
+
+//static void draw_background_cirlce(Layer *layer, GContext* ctx) {
+//    GRect bounds = layer_get_bounds(layer);
+//    graphics_context_set_fill_color(ctx, THEME_COLOR_BACKGROUND_SECONDARY);
+//    graphics_fill_circle(ctx, GRectCenter(bounds), bounds.size.w / 2);
+//}
+
+static void theatres_screen_load(Window *window) {
+    Layer *window_layer = window_get_root_layer(window);
+    GRect boundsMain = layer_get_bounds(window_layer);
+    GRect bounds = GRectCenterIn(ROUND_SIZE, ROUND_SIZE, boundsMain);
+
+
+    //set for circle background
+    window_set_background_color(window, THEME_COLOR_BACKGROUND_SECONDARY);
+    uint16_t usableWidth = bounds.size.w - MARGIN * 2;
+    uint16_t startX = bounds.origin.x + MARGIN;
+    uint16_t startY = bounds.origin.y + MARGIN * 2;
+
+    //address
+    theatresUI.address = text_layer_create(GRect(startX, startY, usableWidth, HEIGHT_ADDRESS));
+    text_layer_set_font(theatresUI.address, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_text_alignment(theatresUI.address, GTextAlignmentCenter);
+    text_layer_set_overflow_mode(theatresUI.address, GTextOverflowModeWordWrap);
+    text_layer_set_background_color(theatresUI.address, GColorClear);
+    layer_add_child(window_layer, text_layer_get_layer(theatresUI.address));
+    text_layer_enable_screen_text_flow_and_paging(theatresUI.address, 2);
+
+
+    startY += HEIGHT_ADDRESS;
+    //theatre name
+    theatresUI.name = text_layer_create(GRect(startX, startY, usableWidth, HEIGHT_NAME));
+    text_layer_set_font(theatresUI.name, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_text_alignment(theatresUI.name, GTextAlignmentCenter);
+    text_layer_set_overflow_mode(theatresUI.name, GTextOverflowModeWordWrap);
+    text_layer_set_background_color(theatresUI.name, GColorClear);
+    text_layer_set_text_color(theatresUI.name, THEME_COLOR_TEXT_SECONDARY);
+    layer_add_child(window_layer, text_layer_get_layer(theatresUI.name));
+    text_layer_enable_screen_text_flow_and_paging(theatresUI.name, 2);
+
+    startY += HEIGHT_NAME;
+
+    //distance
+    theatresUI.distance = text_layer_create(GRect(startX, startY, usableWidth, HEIGHT_DISTANCE));
+    text_layer_set_font(theatresUI.distance, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_text_alignment(theatresUI.distance, GTextAlignmentCenter);
+    layer_add_child(window_layer, text_layer_get_layer(theatresUI.distance));
+    text_layer_set_background_color(theatresUI.distance, GColorClear);
+    startY += HEIGHT_DISTANCE;
+
+    //page indicator
+
+    theatresUI.page = text_layer_create(GRect(startX, startY, usableWidth, HEIGHT_PAGE));
+    text_layer_set_font(theatresUI.page, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_text_alignment(theatresUI.page, GTextAlignmentCenter);
+    text_layer_set_background_color(theatresUI.page, GColorClear);
+    layer_add_child(window_layer, text_layer_get_layer(theatresUI.page));
+
+    window_set_click_config_provider(theatresUI.window, theatre_click_config_provider);
+    //then set current
+    set_current_theatre(theatresUI.currentIndex);
+}
+#endif
 
 static void theatres_screen_unload() {
     theatresUI.currentMovie = NULL;
+#ifdef PBL_RECT
     gbitmap_destroy(theatresUI.upIcon);
     gbitmap_destroy(theatresUI.downIcon);
     gbitmap_destroy(theatresUI.selectIcon);
+    action_bar_layer_destroy(theatresUI.actionBar);
+#else
+    free(pageText);
+    text_layer_destroy(theatresUI.page);
+#endif
+
     text_layer_destroy(theatresUI.address);
     text_layer_destroy(theatresUI.distance);
     text_layer_destroy(theatresUI.name);
     //text_layer_destroy(theatresUI.titleBar);
-    action_bar_layer_destroy(theatresUI.actionBar);
+
     if (theatresUI.window) {
         window_destroy(theatresUI.window);
     }

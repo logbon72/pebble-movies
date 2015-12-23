@@ -1,5 +1,6 @@
-#pragma once
+#ifndef PBMOVIES_H
 
+#define PBMOVIES_H
 /* 
  * File:   pbmovies.h
  * Author: intelworx
@@ -18,7 +19,7 @@ uint8_t *QR_CODE_BUFFER;
 
 #define SHOWTIMES_BUFFER_MAX_SIZE 800
 #define MOVIES_BUFFER_MAX_SIZE 2048
-#define THEATRES_BUFFER_MAX_SIZE 1500
+#define THEATRES_BUFFER_MAX_SIZE 1600
 #define QR_CODE_BUFFER_MAX_SIZE 2400
 
 enum APP_KEYS {
@@ -39,6 +40,7 @@ enum APP_KEYS {
 #define BUFFER_CREATE(size)  ((char*) malloc((size + 1) * sizeof (char)))
 #define BUFFER_CREATE_BYTE(size)  ((uint8_t*) malloc(size * sizeof (uint8_t)))
 #define GRectCenterIn(w1, h1, b) (GRect((b.size.w - w1)/2, (b.size.h - h1)/2, w1, h1))
+#define GRectCenter(b) (GPoint(b.origin.x + b.size.w/2, b.origin.y + b.size.h/2))
 
 //now define all message codes
 
@@ -76,9 +78,9 @@ enum PbMsgOut {
  * Colors to be used by color platforms
  */
 #define THEME_COLOR_TEXT_PRIMARY GColorBlack
-#define THEME_COLOR_TEXT_SECONDARY GColorRajah
+#define THEME_COLOR_TEXT_SECONDARY GColorWhite
 #define THEME_COLOR_BACKGROUND_PRIMARY GColorDarkCandyAppleRed
-#define THEME_COLOR_BACKGROUND_SECONDARY GColorMelon
+#define THEME_COLOR_BACKGROUND_SECONDARY GColorOrange
 #define THEME_COLOR_OUTLINE_PRIMARY GColorWhite
 #define THEME_COLOR_OUTLINE_SECONDARY GColorCobaltBlue
 #define THEME_COLOR_MENU_NORMAL_BACKGROUND GColorWhite
@@ -94,3 +96,5 @@ char *get_data_at(char* data, int row, int col, char*, int);
 int send_message_with_string(uint8_t, uint8_t, char *, uint8_t, char *);
 void load_showtimes_for_movie_theatre();
 void remove_top_window(int count);
+
+#endif

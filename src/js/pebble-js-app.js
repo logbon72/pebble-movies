@@ -32,7 +32,7 @@
 
   var PRELOAD_WAIT_TIME = 2000;
 
-  var KEY_PRELOAD = "preloadData22";
+  var KEY_PRELOAD = "preloadData24";
   var KEY_DEVICE_ID = "deviceId";
   var KEY_SECRET_KEY = "secretKey";
   var DAYS_TO_BROWSE = 5;
