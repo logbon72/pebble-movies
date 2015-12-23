@@ -1,7 +1,7 @@
 #include <pebble.h>
 #include "pbmovies.h"
 
-#ifdef PBL_COLOR
+#ifndef PBL_BW
 
 void set_menu_color(MenuLayer *menu) {
     menu_layer_set_normal_colors(menu, THEME_COLOR_MENU_NORMAL_BACKGROUND, THEME_COLOR_MENU_NORMAL_FOREGROUND);

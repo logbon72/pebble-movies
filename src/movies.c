@@ -19,7 +19,7 @@
 #else
 #define UI_TITLE_HEIGHT 44
 #endif
-#define UI_Y_SPACING 2
+#define UI_Y_SPACING 1
 #define UI_RUNTIME_HEIGHT 22
 #define UI_RATING_HEIGHT 18
 #define UI_GENRE_HEIGHT 16

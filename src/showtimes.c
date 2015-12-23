@@ -1,6 +1,8 @@
 #include <pebble.h>
+#include <pebble_fonts.h>
 #include "pbmovies.h"
 #include "showtimes.h"
+#include"color.h"
 #include "preloader.h"
 
 static const char* typeDigital = "Digital";
@@ -74,7 +76,10 @@ static int16_t menu_header_height_callback(MenuLayer *menu_layer, uint16_t secti
 
 static void menu_draw_header(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
     // Determine which section we're working with
-    menu_cell_basic_header_draw(ctx, cell_layer, CurrentDateStr);
+    if (section_index == 0) {
+        graphics_draw_text(ctx, "Showtimes", fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), layer_get_bounds(cell_layer), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+    }
+
 }
 
 static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *ci, void *data) {
@@ -88,11 +93,15 @@ static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *
         showtimeType = typeDigital;
     }
 
+#ifndef PBL_ROUND    
     GBitmap *icon = showtime.link[0] == SHOWTIME_CAN_BUY ? showtimesUI.canBuyIcon :
             showtimesUI.cantBuyIcon;
-
-
     menu_cell_basic_draw(ctx, cell_layer, showtime.time, showtimeType, icon);
+#else
+    menu_cell_basic_draw(ctx, cell_layer, showtime.time, showtimeType, NULL);
+#endif
+
+
 }
 
 static void menu_select_handler(MenuLayer *menu_layer, MenuIndex *ci, void *data) {
@@ -125,7 +134,9 @@ static void showtimes_load(Window *window) {
 
     // Bind the menu layer's click config provider to the window for interactivity
     menu_layer_set_click_config_onto_window(showtimesUI.menuLayer, showtimesUI.window);
-
+#ifndef PBL_BW
+    set_menu_color(showtimesUI.menuLayer);
+#endif
     // Add it to the window for display
     layer_add_child(windowLayer, menu_layer_get_layer(showtimesUI.menuLayer));
 }
@@ -135,7 +146,7 @@ static void showtimes_unload(Window *window) {
     gbitmap_destroy(showtimesUI.canBuyIcon);
     gbitmap_destroy(showtimesUI.cantBuyIcon);
     showtimesUI.total = 0;
-    if(showtimesUI.window){
+    if (showtimesUI.window) {
         window_destroy(showtimesUI.window);
     }
     free(SHOWTIMES_BUFFER);
@@ -150,7 +161,7 @@ void showtimes_init() {
     if (showtimesUI.total > MAX_SHOWTIMES_COUNT) {
         showtimesUI.total = MAX_SHOWTIMES_COUNT;
     }
-    
+
     showtimesUI.canBuyIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_CAN_BUY);
     showtimesUI.cantBuyIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_CANT_BUY);
 

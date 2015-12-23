@@ -4,7 +4,9 @@
 #include "qr_screen.h"
 
 static struct QrCodeScreen {
+#ifndef PBL_ROUND
     TextLayer *titleLayer;
+#endif    
     Window *window;
     BitmapLayer *qrCodeLayer;
     GBitmap *qrCode;
@@ -14,16 +16,19 @@ static void screen_load(Window *window) {
 
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
+    int startY=5;
+#ifndef PBL_ROUND    
     //title layer
-    qrCodeScreen.titleLayer = text_layer_create(GRect(0, 5, bounds.size.w, 24));
+    qrCodeScreen.titleLayer = text_layer_create(GRect(0, startY, bounds.size.w, 24));
     text_layer_set_text_alignment(qrCodeScreen.titleLayer, GTextAlignmentCenter);
     text_layer_set_font(qrCodeScreen.titleLayer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
     text_layer_set_text(qrCodeScreen.titleLayer, "Scan This Code");
-    //draw bitmap layer
+    startY += 24;
     layer_add_child(window_layer, text_layer_get_layer(qrCodeScreen.titleLayer));
-
-
-    qrCodeScreen.qrCodeLayer = bitmap_layer_create(GRect(0, 34, bounds.size.w, bounds.size.h - 33));
+    //draw bitmap layer
+#endif
+   
+    qrCodeScreen.qrCodeLayer = bitmap_layer_create(GRect(0, startY, bounds.size.w, bounds.size.h - startY));
     bitmap_layer_set_bitmap(qrCodeScreen.qrCodeLayer, qrCodeScreen.qrCode);
     bitmap_layer_set_alignment(qrCodeScreen.qrCodeLayer, GAlignCenter);
 
@@ -34,7 +39,10 @@ static void screen_load(Window *window) {
 static void screen_unload() {
     bitmap_layer_destroy(qrCodeScreen.qrCodeLayer);
     gbitmap_destroy(qrCodeScreen.qrCode);
+#ifndef PBL_ROUND    
     text_layer_destroy(qrCodeScreen.titleLayer);
+#endif    
+    
     if (qrCodeScreen.window) {
         window_destroy(qrCodeScreen.window);
     }
