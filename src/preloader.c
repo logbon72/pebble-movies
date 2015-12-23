@@ -3,7 +3,7 @@
 #include "preloader.h"
 
 #define ANIMATION_TIMEOUT 100
-#define STROKE_SIZE 8
+#define STROKE_SIZE 20
 #define SQUARE_LENGTH 100
 #define ANGLE_STEPS 30;
 #define TEXT_HEIGHT 22
@@ -22,17 +22,11 @@ static struct PreloaderScreen {
 static int currentAngle = 0;
 
 static void update_square_layer(Layer *layer, GContext* ctx) {
-    graphics_context_set_stroke_color(ctx, GColorWhite);
+
     GRect bounds = layer_get_bounds(layer);
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    uint8_t bX = bounds.origin.x + STROKE_SIZE;
-    uint8_t bY = bounds.origin.y + STROKE_SIZE;
-    uint8_t bW = bounds.size.w - 2 * STROKE_SIZE;
-    uint8_t bH = bounds.size.h - 2 * STROKE_SIZE;
     currentAngle += ANGLE_STEPS;
-    graphics_context_set_stroke_color(ctx, THEME_COLOR_OUTLINE_PRIMARY);
-    graphics_context_set_stroke_width(ctx, STROKE_SIZE);
-    graphics_draw_arc(ctx, GRect(bX, bY, bW, bH), GOvalScaleModeFillCircle, DEG_TO_TRIGANGLE(0), DEG_TO_TRIGANGLE(currentAngle));
+    graphics_context_set_fill_color(ctx, THEME_COLOR_BACKGROUND_SECONDARY);
+    graphics_fill_radial(ctx, bounds, GOvalScaleModeFillCircle, STROKE_SIZE, DEG_TO_TRIGANGLE(0), DEG_TO_TRIGANGLE(currentAngle));
 
     if (currentAngle >= 360) {
         currentAngle = 0;
@@ -83,7 +77,7 @@ static void preloader_load(Window *window) {
     layer_set_update_proc(square_layer, update_square_layer);
     layer_add_child(window_layer, square_layer);
 
-    
+
     int width = bounds.size.w;
     preloader.statusText = text_layer_create(GRectCenterIn(width, TEXT_HEIGHT, bounds));
 

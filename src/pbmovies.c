@@ -108,7 +108,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
 
         //APP_LOG(APP_LOG_LEVEL_DEBUG,"Total Received %d",totalDataReceived);
         reset_message_receiver();
-        //preloader_set_is_on(0);
+
         preloader_stop();
         switch (msgCode) {
 
