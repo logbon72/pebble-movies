@@ -2,6 +2,7 @@
 #include "pbmovies.h"
 #include "home.h"
 #include "preloader.h"
+#include"color.h"
 #include "start.h"
 
 #define HOME_MENU_SECTIONS 1
@@ -32,7 +33,7 @@ static void home_screen_select_handler(int index, void *ctx) {
     if (iter == NULL) {
         return;
     }
-    
+
     uint16_t msgId = index ? PB_MSG_OUT_GET_THEATRES : PB_MSG_OUT_GET_MOVIES;
     Tuplet msgCode = TupletInteger(APP_KEY_MSG_CODE, msgId);
     dict_write_tuplet(iter, &msgCode);
@@ -57,22 +58,27 @@ static void home_screen_load(Window *window) {
         .title = "Movies",
         .icon = menuIcons[0],
         .callback = home_screen_select_handler,
+        .subtitle = PBL_IF_ROUND_ELSE(CurrentDateStr, NULL)
     };
 
     menuItems[1] = (SimpleMenuItem){
         .title = "Theaters",
         .icon = menuIcons[1],
         .callback = home_screen_select_handler,
+        .subtitle = PBL_IF_ROUND_ELSE(CurrentDateStr, NULL)
     };
 
     menuSection[0] = (SimpleMenuSection){
         .items = menuItems,
         .num_items = HOME_MENU_ROWS,
-        .title = CurrentDateStr,
+        .title = PBL_IF_RECT_ELSE(CurrentDateStr, NULL),
     };
 
     homeScreen.menu_layer = simple_menu_layer_create(bounds, window, menuSection, HOME_MENU_SECTIONS, NULL);
 
+#ifdef PBL_COLOR
+    set_menu_color(simple_menu_layer_get_menu_layer(homeScreen.menu_layer));
+#endif
     // Add it to the window for display
     layer_add_child(window_layer, simple_menu_layer_get_layer(homeScreen.menu_layer));
 }
@@ -82,7 +88,7 @@ static void home_screen_unload() {
     for (uint16_t i = 0; i < ARRAY_LENGTH(menuIcons); i++) {
         gbitmap_destroy(menuIcons[i]);
     }
-    if(homeScreen.window){
+    if (homeScreen.window) {
         window_destroy(homeScreen.window);
     }
 }

@@ -38,6 +38,7 @@ enum APP_KEYS {
 #define MIN_OF(a, b) (a > b ? b : a)
 #define BUFFER_CREATE(size)  ((char*) malloc((size + 1) * sizeof (char)))
 #define BUFFER_CREATE_BYTE(size)  ((uint8_t*) malloc(size * sizeof (uint8_t)))
+#define GRectCenterIn(w1, h1, b) (GRect((b.size.w - w1)/2, (b.size.h - h1)/2, w1, h1))
 
 //now define all message codes
 
@@ -78,7 +79,7 @@ enum PbMsgOut {
 #define THEME_COLOR_TEXT_SECONDARY GColorRajah
 #define THEME_COLOR_BACKGROUND_PRIMARY GColorDarkCandyAppleRed
 #define THEME_COLOR_BACKGROUND_SECONDARY GColorMelon
-#define THEME_COLOR_OUTLINE_PRIMARY GColorDukeBlue
+#define THEME_COLOR_OUTLINE_PRIMARY GColorWhite
 #define THEME_COLOR_OUTLINE_SECONDARY GColorCobaltBlue
 #define THEME_COLOR_MENU_NORMAL_BACKGROUND GColorWhite
 #define THEME_COLOR_MENU_NORMAL_FOREGROUND GColorBulgarianRose

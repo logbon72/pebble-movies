@@ -43,7 +43,11 @@ static void menu_day_selected(int index, void *ctx) {
     //APP_LOG(APP_LOG_LEVEL_DEBUG, "You selected date offset %d", index);
     dateOffset = index;
     time_t t = time(0);
+#ifdef PBL_RECT
     strftime(CurrentDateStr, sizeof (CurrentDateStr), "%A, %b %e", addday(&t, index));
+#else
+    strftime(CurrentDateStr, sizeof (CurrentDateStr), "%a, %b %e", addday(&t, index));
+#endif
     home_screen_init();
 }
 
