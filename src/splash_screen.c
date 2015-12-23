@@ -47,12 +47,17 @@ static void splash_click_config_provider(void *context) {
 static void splash_screen_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
+
+#if defined(PBL_COLOR)
+    window_set_background_color(window, THEME_COLOR_BACKGROUND_PRIMARY);
+#else
     window_set_background_color(window, GColorBlack);
-    //window_set_fullscreen(window, true);
+#endif
 
     splashScreen.statusText = text_layer_create((GRect) {
         .origin =
-        { 0, 110}, .size =
+        { 0, 110},
+        .size =
         { bounds.size.w, 40}
     });
     text_layer_set_text(splashScreen.statusText, LOADING_TEXT);
@@ -63,10 +68,14 @@ static void splash_screen_load(Window *window) {
     //add text
     layer_add_child(window_layer, text_layer_get_layer(splashScreen.statusText));
     //create image layer
-    splashScreen.imgLayer = bitmap_layer_create(GRect(6, 30, 128, 70));
+    short height = 70;
+    short width = 128;
+    short x = (bounds.size.w - width) / 2;
+    
+    splashScreen.imgLayer = bitmap_layer_create(GRect(x, 30, width, height));
     //RESOURCE_ID_IMAGE_SPLASH
     if (!splashScreen.img) {
-        splashScreen.img = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SPLASH_BLACK);
+        splashScreen.img = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SPLASH);
     }
     bitmap_layer_set_bitmap(splashScreen.imgLayer, splashScreen.img);
     layer_add_child(window_layer, bitmap_layer_get_layer(splashScreen.imgLayer));

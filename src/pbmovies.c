@@ -36,7 +36,7 @@ static void reset_message_receiver() {
 }
 
 static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, Tuple *tuple) {
-
+    
     if (!tuple || page != lastPage + 1) {
         //APP_LOG(APP_LOG_LEVEL_WARNING, "Message broken");
         lastPage = 0;

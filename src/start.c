@@ -19,7 +19,7 @@ static char TomorrowText[7];
 
 static int dateOffset = 0;
 
-int get_date_offset(){
+int get_date_offset() {
     return dateOffset;
 }
 
@@ -43,10 +43,9 @@ static void menu_day_selected(int index, void *ctx) {
     //APP_LOG(APP_LOG_LEVEL_DEBUG, "You selected date offset %d", index);
     dateOffset = index;
     time_t t = time(0);
-    strftime(CurrentDateStr, sizeof(CurrentDateStr), "%A, %b %e", addday(&t, index));
+    strftime(CurrentDateStr, sizeof (CurrentDateStr), "%A, %b %e", addday(&t, index));
     home_screen_init();
 }
-
 
 static void start_screen_load(Window *window) {
     Layer *windowLayer = window_get_root_layer(window);
@@ -55,8 +54,8 @@ static void start_screen_load(Window *window) {
     //get local time
     time_t rawtime;
     time(&rawtime);
-//    struct tm *currentTime;
-//    currentTime = localtime(&rawtime);
+    //    struct tm *currentTime;
+    //    currentTime = localtime(&rawtime);
 
     //today's format
     strftime(TodayText, sizeof (TodayText), "%b %e", localtime(&rawtime));
@@ -95,19 +94,24 @@ static void start_screen_load(Window *window) {
     }
 
     sections[0] = (SimpleMenuSection){
-        .title = "Select Day",
+        .title = PBL_IF_RECT_ELSE("Select Day", NULL),
         .num_items = DAYS_TO_BROWSE,
         .items = menu_days,
     };
 
 
     startScreen.menu_layer = simple_menu_layer_create(bounds, window, sections, SECTIONS_COUNT, NULL);
+#if defined(PBL_COLOR)
+    MenuLayer *menuLayer = simple_menu_layer_get_menu_layer(startScreen.menu_layer);
+    menu_layer_set_normal_colors(menuLayer, THEME_COLOR_MENU_NORMAL_BACKGROUND, THEME_COLOR_MENU_NORMAL_FOREGROUND);
+    menu_layer_set_highlight_colors(menuLayer, THEME_COLOR_MENU_HIGHLIGHT_BACKGROUND, THEME_COLOR_MENU_HIGHLIGHT_FOREGROUND);
+#endif
     layer_add_child(windowLayer, simple_menu_layer_get_layer(startScreen.menu_layer));
 }
 
 static void start_screen_unload() {
     simple_menu_layer_destroy(startScreen.menu_layer);
-    if(startScreen.window){
+    if (startScreen.window) {
         window_destroy(startScreen.window);
     }
 }

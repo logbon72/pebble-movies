@@ -21,7 +21,6 @@ uint8_t *QR_CODE_BUFFER;
 #define THEATRES_BUFFER_MAX_SIZE 1500
 #define QR_CODE_BUFFER_MAX_SIZE 2400
 
-
 enum APP_KEYS {
     APP_KEY_MSG_CODE = 0x0, // TUPLE_INT (0,1)
     APP_KEY_MESSAGE = 0x1, // TUPLE_CSTRING
@@ -71,6 +70,20 @@ enum PbMsgOut {
 #define DELIMITER_FIELD '|'
 #define DELIMITER_RECORD '\t'
 #define MSG_INTERVAL_WAIT_MS 10000
+
+/**
+ * Colors to be used by color platforms
+ */
+#define THEME_COLOR_TEXT_PRIMARY GColorBlack
+#define THEME_COLOR_TEXT_SECONDARY GColorRajah
+#define THEME_COLOR_BACKGROUND_PRIMARY GColorDarkCandyAppleRed
+#define THEME_COLOR_BACKGROUND_SECONDARY GColorMelon
+#define THEME_COLOR_OUTLINE_PRIMARY GColorDukeBlue
+#define THEME_COLOR_OUTLINE_SECONDARY GColorCobaltBlue
+#define THEME_COLOR_MENU_NORMAL_BACKGROUND GColorWhite
+#define THEME_COLOR_MENU_NORMAL_FOREGROUND GColorBulgarianRose
+#define THEME_COLOR_MENU_HIGHLIGHT_BACKGROUND GColorBulgarianRose
+#define THEME_COLOR_MENU_HIGHLIGHT_FOREGROUND GColorWhite
 
 void app_message_init(void);
 short int record_count(char*, const char);

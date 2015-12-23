@@ -4,7 +4,7 @@
   "longName": "Movie Times on the go",
   "companyName": "Joseph Orilogbon",
   "versionCode": 2,
-  "versionLabel": "2.3",
+  "versionLabel": "2.4",
   "watchapp": {
     "watchface": false
   },
@@ -26,9 +26,9 @@
   "resources": {
     "media": [
       {
-        "type": "png-trans",
+        "type": "png",
         "name": "IMAGE_SPLASH",
-        "file": "img/splash2.png"
+        "file": "img/splash.png"
       },
       {
         "type": "png",
@@ -67,14 +67,14 @@
         "file": "icons/theatre_small.png"
       },
       {
-        "type": "png-trans",
+        "type": "bitmap",
         "name": "ICON_A_BAR_UP",
-        "file": "icons/icon_up.png"
+        "file": "icons/action_bar_icon_up.png"
       },
       {
-        "type": "png-trans",
+        "type": "bitmap",
         "name": "ICON_A_BAR_DOWN",
-        "file": "icons/icon_down.png"
+        "file": "icons/action_bar_icon_down.png"
       },
       {
         "type": "png",
@@ -90,7 +90,8 @@
   },
   "targetPlatforms": [
     "aplite",
-    "basalt"
+    "basalt",
+    "chalk"
   ],
   "sdkVersion": "3"
 }
