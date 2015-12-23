@@ -24,7 +24,12 @@ static int currentAngle = 0;
 static void update_square_layer(Layer *layer, GContext* ctx) {
 
     GRect bounds = layer_get_bounds(layer);
-    currentAngle += ANGLE_STEPS;
+
+    if (!preloader.isOn) {
+        currentAngle = 360;
+    } else {
+        currentAngle += ANGLE_STEPS;
+    }
     graphics_context_set_fill_color(ctx, THEME_COLOR_BACKGROUND_SECONDARY);
     graphics_fill_radial(ctx, bounds, GOvalScaleModeFillCircle, STROKE_SIZE, DEG_TO_TRIGANGLE(0), DEG_TO_TRIGANGLE(currentAngle));
 
@@ -50,10 +55,9 @@ static void unload(Window *w) {
     if (preloader.timer) {
         app_timer_cancel(preloader.timer);
     }
-
     preloader.timer = NULL;
     text_layer_destroy(preloader.statusText);
-
+    currentAngle = 0;
     //gbitmap_destroy(statusBarIcon);
     preloader.isOn = 1;
 }
@@ -69,10 +73,8 @@ static void preloader_load(Window *window) {
     window_set_background_color(window, THEME_COLOR_BACKGROUND_PRIMARY);
     Layer *window_layer = window_get_root_layer(preloader.window);
 
-    int squareWidth = SQUARE_LENGTH;
-    int squareHeight = SQUARE_LENGTH;
     GRect bounds = layer_get_bounds(window_layer);
-    square_layer = layer_create(GRect((bounds.size.w - squareWidth) / 2, (bounds.size.h - squareHeight) / 2, squareWidth, squareHeight));
+    square_layer = layer_create(GRectCenterIn(SQUARE_LENGTH, SQUARE_LENGTH, bounds));
 
     layer_set_update_proc(square_layer, update_square_layer);
     layer_add_child(window_layer, square_layer);
