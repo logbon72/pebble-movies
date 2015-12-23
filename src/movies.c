@@ -1,18 +1,29 @@
 #include <pebble.h>
 #include <stdio.h>
 #include <pebble_fonts.h>
+#include <gcolor_definitions.h>
 #include "pbmovies.h"
 #include "movies.h"
 #include "preloader.h"
 
 #define CRTICS_TEXT_SIZE 13
+#ifndef PBL_ROUND
 #define RUNTIME_TEXT_SIZE 8
+#else
+#define RUNTIME_TEXT_SIZE 16
+#endif
 #define USERS_RATING_TEXT_SIZE 13
 
+#ifndef PBL_ROUND
 #define UI_TITLE_HEIGHT 80
+#else
+#define UI_TITLE_HEIGHT 44
+#endif
 #define UI_Y_SPACING 2
 #define UI_RUNTIME_HEIGHT 20
 #define UI_RATING_HEIGHT 18
+#define UI_GENRE_HEIGHT 16
+#define UI_PAGING_HEIGHT 18
 #define UI_INC_Y(y, h) (y+= h+UI_Y_SPACING)
 #define UI_RUNTIME_WIDTH 60
 #define UI_CRITICS_WIDTH 65
@@ -26,17 +37,23 @@ char *usersRatingBuffer;
 static struct MovieUIScreen {
     Window *window;
     TextLayer *titleTxt;
-    Layer *titleUnderline;
     TextLayer *runtimeTxt;
-    TextLayer *ratedTxt;
     TextLayer *criticRatingLabelTxt;
     TextLayer *userRatingLabelTxt;
     TextLayer *genreTxt;
+#ifndef PBL_ROUND
+    TextLayer *ratedTxt;
+    Layer *titleUnderline;
     ActionBarLayer *actionBar;
-
     GBitmap *downIcon;
     GBitmap *upIcon;
     GBitmap *selectIcon;
+#endif
+
+#ifndef PBL_RECT
+    TextLayer *pageTxt;
+#endif    
+
     uint8_t total;
     uint8_t currentIndex;
     char *currentTheatreId;
@@ -65,6 +82,7 @@ static void set_current(uint8_t movieIndex) {
 
     moviesUI.currentIndex = movieIndex;
 
+#ifndef PBL_ROUND    
     //should icons be shown?
     if (movieIndex > 0) {
         action_bar_layer_set_icon(moviesUI.actionBar, BUTTON_ID_UP, moviesUI.upIcon);
@@ -77,6 +95,7 @@ static void set_current(uint8_t movieIndex) {
     } else {
         action_bar_layer_clear_icon(moviesUI.actionBar, BUTTON_ID_DOWN);
     }
+#endif
 
     set_movie_at_index(movieIndex);
     text_layer_set_text(moviesUI.titleTxt, movie.title);
@@ -98,9 +117,16 @@ static void set_current(uint8_t movieIndex) {
     }
 
 
+#ifndef PBL_ROUND
     snprintf(runtimeTextBuffer, RUNTIME_TEXT_SIZE, "%s min", movie.runtime);
     text_layer_set_text(moviesUI.runtimeTxt, runtimeTextBuffer);
     text_layer_set_text(moviesUI.ratedTxt, movie.rated);
+#endif
+
+#ifndef PBL_RECT
+    snprintf(runtimeTextBuffer, RUNTIME_TEXT_SIZE, "%s min | %s", movie.runtime, movie.rated);
+    text_layer_set_text(moviesUI.runtimeTxt, runtimeTextBuffer);
+#endif
 
     //APP_LOG(APP_LOG_LEVEL_INFO, "Critic Rating: %s", currentMovie.criticRating);
 }
@@ -140,17 +166,23 @@ static void movie_click_config_provider(void *context) {
 static void movies_screen_unload() {
     text_layer_destroy(moviesUI.criticRatingLabelTxt);
     text_layer_destroy(moviesUI.genreTxt);
-    text_layer_destroy(moviesUI.ratedTxt);
     text_layer_destroy(moviesUI.runtimeTxt);
     text_layer_destroy(moviesUI.titleTxt);
     text_layer_destroy(moviesUI.userRatingLabelTxt);
 
+#ifndef PBL_ROUND
+    text_layer_destroy(moviesUI.ratedTxt);
     layer_destroy(moviesUI.titleUnderline);
     gbitmap_destroy(moviesUI.downIcon);
     gbitmap_destroy(moviesUI.upIcon);
     gbitmap_destroy(moviesUI.selectIcon);
-
     action_bar_layer_destroy(moviesUI.actionBar);
+#endif
+
+#ifndef PBL_RECT
+    text_layer_destroy(moviesUI.pageTxt);
+#endif
+
     free(MOVIES_BUFFER);
     free(criticTextWithPercent);
     free(runtimeTextBuffer);
@@ -165,8 +197,10 @@ static void draw_outline_around(Layer *layer, GContext* ctx) {
     //graphics_draw_line(ctx, GPoint(lb.origin.x- 2, lb.size.h + lb.origin.y + 1), GPoint(lb.origin.x + lb.size.w + 2, lb.size.h + lb.origin.y + 1));
     graphics_context_set_stroke_color(ctx, THEME_COLOR_BACKGROUND_PRIMARY);
     graphics_context_set_stroke_width(ctx, 3);
-    graphics_draw_line(ctx, GPoint(lb.origin.x, lb.origin.y), GPoint(lb.origin.x+lb.size.w, lb.origin.y));
+    graphics_draw_line(ctx, GPoint(lb.origin.x, lb.origin.y), GPoint(lb.origin.x + lb.size.w, lb.origin.y));
 }
+
+#ifndef PBL_ROUND
 
 static void movies_screen_load(Window *window) {
     Layer *windowLayer = window_get_root_layer(window);
@@ -209,6 +243,7 @@ static void movies_screen_load(Window *window) {
     text_layer_set_overflow_mode(moviesUI.titleTxt, GTextOverflowModeFill);
     text_layer_enable_screen_text_flow_and_paging(moviesUI.titleTxt, 2);
 
+    //title  outline
     moviesUI.titleUnderline = layer_create(GRect(titleGrect.origin.x - 2, titleGrect.origin.y - 2, titleGrect.size.w + 4, titleGrect.size.h + 4));
     layer_set_update_proc(moviesUI.titleUnderline, draw_outline_around);
     layer_add_child(windowLayer, moviesUI.titleUnderline);
@@ -255,13 +290,75 @@ static void movies_screen_load(Window *window) {
 
     action_bar_layer_set_icon(moviesUI.actionBar, BUTTON_ID_SELECT, moviesUI.selectIcon);
     action_bar_layer_set_click_config_provider(moviesUI.actionBar, movie_click_config_provider);
-
-    criticTextWithPercent = BUFFER_CREATE(CRTICS_TEXT_SIZE - 1);
-    runtimeTextBuffer = BUFFER_CREATE(RUNTIME_TEXT_SIZE - 1);
-    usersRatingBuffer = BUFFER_CREATE(USERS_RATING_TEXT_SIZE - 1);
     set_current(moviesUI.currentIndex);
 }
+#endif
 
+#ifndef PBL_RECT
+
+static void movies_screen_load(Window *window) {
+    Layer *windowLayer = window_get_root_layer(window);
+    window_set_background_color(window, THEME_COLOR_BACKGROUND_PRIMARY);
+
+    GRect bounds = layer_get_bounds(windowLayer);
+    int totalHeight = UI_RUNTIME_HEIGHT + UI_TITLE_HEIGHT + UI_RATING_HEIGHT * 2 + UI_GENRE_HEIGHT;
+    int startY = (bounds.size.h - totalHeight) / 2;
+    int startX = bounds.origin.x;
+    int allowedWidth = bounds.size.w;
+
+    //runtime & rated text
+    moviesUI.runtimeTxt = text_layer_create(GRect(startX, startY, allowedWidth, UI_RUNTIME_HEIGHT));
+    text_layer_set_font(moviesUI.runtimeTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+    text_layer_set_background_color(moviesUI.runtimeTxt, GColorClear);
+    text_layer_set_text_color(moviesUI.runtimeTxt, THEME_COLOR_TEXT_PRIMARY);
+    text_layer_set_text_alignment(moviesUI.runtimeTxt, GTextAlignmentCenter);
+    layer_add_child(windowLayer, text_layer_get_layer(moviesUI.runtimeTxt));
+    startY += UI_RUNTIME_HEIGHT;
+
+    //title
+    moviesUI.titleTxt = text_layer_create(GRect(startX, startY, allowedWidth, UI_TITLE_HEIGHT));
+    text_layer_set_font(moviesUI.titleTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_text_alignment(moviesUI.titleTxt, GTextAlignmentCenter);
+    text_layer_set_text_color(moviesUI.titleTxt, THEME_COLOR_TEXT_PRIMARY);
+    text_layer_set_background_color(moviesUI.titleTxt, GColorClear);
+    layer_add_child(windowLayer, text_layer_get_layer(moviesUI.titleTxt));
+    text_layer_set_overflow_mode(moviesUI.titleTxt, GTextOverflowModeFill);
+    text_layer_enable_screen_text_flow_and_paging(moviesUI.titleTxt, 2);
+    startY += UI_TITLE_HEIGHT;
+
+    //metacrtic label
+    moviesUI.criticRatingLabelTxt = text_layer_create(GRect(0, startY, allowedWidth, UI_RATING_HEIGHT));
+    text_layer_set_background_color(moviesUI.criticRatingLabelTxt, GColorClear);
+    text_layer_set_text_color(moviesUI.criticRatingLabelTxt, THEME_COLOR_TEXT_PRIMARY);
+    text_layer_set_overflow_mode(moviesUI.criticRatingLabelTxt, GTextOverflowModeFill);
+    text_layer_set_font(moviesUI.criticRatingLabelTxt, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_text_alignment(moviesUI.criticRatingLabelTxt, GTextAlignmentCenter);
+    layer_add_child(windowLayer, text_layer_get_layer(moviesUI.criticRatingLabelTxt));
+
+    startY += UI_RATING_HEIGHT;
+    //user rating label
+    moviesUI.userRatingLabelTxt = text_layer_create(GRect(0, startY, allowedWidth, UI_RATING_HEIGHT));
+    text_layer_set_background_color(moviesUI.userRatingLabelTxt, GColorClear);
+    text_layer_set_text_color(moviesUI.userRatingLabelTxt, THEME_COLOR_TEXT_PRIMARY);
+    text_layer_set_font(moviesUI.userRatingLabelTxt, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_text_alignment(moviesUI.userRatingLabelTxt, GTextAlignmentCenter);
+    layer_add_child(windowLayer, text_layer_get_layer(moviesUI.userRatingLabelTxt));
+    startY += UI_RATING_HEIGHT;
+
+    //Genre
+    moviesUI.genreTxt = text_layer_create(GRect(startX, startY, allowedWidth, UI_GENRE_HEIGHT));
+    text_layer_set_text_alignment(moviesUI.genreTxt, GTextAlignmentCenter);
+    text_layer_set_font(moviesUI.genreTxt, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_text_color(moviesUI.genreTxt, THEME_COLOR_TEXT_PRIMARY);
+    text_layer_set_background_color(moviesUI.genreTxt, GColorClear);
+    layer_add_child(windowLayer, text_layer_get_layer(moviesUI.genreTxt));
+
+    //set click handler
+    window_set_click_config_provider(window, movie_click_config_provider);
+
+    set_current(moviesUI.currentIndex);
+}
+#endif
 //void theatres_screen_initialize(int, enum TheatreUiMode, char*);
 
 void movies_screen_init(int recordCount, enum MovieUIMode mode, char *theatreId) {
@@ -280,6 +377,10 @@ void movies_screen_init(int recordCount, enum MovieUIMode mode, char *theatreId)
 
 
     const bool animated = true;
+    criticTextWithPercent = BUFFER_CREATE(CRTICS_TEXT_SIZE - 1);
+    runtimeTextBuffer = BUFFER_CREATE(RUNTIME_TEXT_SIZE - 1);
+    usersRatingBuffer = BUFFER_CREATE(USERS_RATING_TEXT_SIZE - 1);
+
     window_stack_push(moviesUI.window, animated);
 }
 

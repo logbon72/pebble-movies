@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include <pebble_fonts.h>
 #include "pbmovies.h"
 #include "theatres.h"
 #include "preloader.h"
@@ -150,8 +151,7 @@ static void theatres_screen_load(Window *window) {
 
     action_bar_layer_set_icon(theatresUI.actionBar, BUTTON_ID_SELECT, theatresUI.selectIcon);
     action_bar_layer_set_click_config_provider(theatresUI.actionBar, theatre_click_config_provider);
-    
-    pageText = (char*) malloc(PAGE_TEXT_SIZE * sizeof (char));
+
     //then set current
     set_current_theatre(theatresUI.currentIndex);
 }
@@ -211,14 +211,16 @@ static void theatres_screen_load(Window *window) {
     //page indicator
 
     theatresUI.page = text_layer_create(GRect(startX, startY, usableWidth, HEIGHT_PAGE));
-    text_layer_set_font(theatresUI.page, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_font(theatresUI.page, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
     text_layer_set_text_alignment(theatresUI.page, GTextAlignmentCenter);
     text_layer_set_background_color(theatresUI.page, GColorClear);
     layer_add_child(window_layer, text_layer_get_layer(theatresUI.page));
 
+    pageText = (char*) malloc(PAGE_TEXT_SIZE * sizeof (char));
     window_set_click_config_provider(theatresUI.window, theatre_click_config_provider);
     //then set current
     set_current_theatre(theatresUI.currentIndex);
+    
 }
 #endif
 

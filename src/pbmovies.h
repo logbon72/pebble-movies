@@ -77,8 +77,8 @@ enum PbMsgOut {
 /**
  * Colors to be used by color platforms
  */
-#define THEME_COLOR_TEXT_PRIMARY GColorBlack
-#define THEME_COLOR_TEXT_SECONDARY GColorWhite
+#define THEME_COLOR_TEXT_PRIMARY GColorWhite
+#define THEME_COLOR_TEXT_SECONDARY GColorBlack
 #define THEME_COLOR_BACKGROUND_PRIMARY GColorDarkCandyAppleRed
 #define THEME_COLOR_BACKGROUND_SECONDARY GColorOrange
 #define THEME_COLOR_OUTLINE_PRIMARY GColorWhite
