@@ -28,9 +28,9 @@
 #define UI_RUNTIME_WIDTH 60
 #define UI_CRITICS_WIDTH 65
 
-char *criticTextWithPercent;
-char *runtimeTextBuffer;
-char *usersRatingBuffer;
+char criticTextWithPercent[CRTICS_TEXT_SIZE];
+char runtimeTextBuffer[RUNTIME_TEXT_SIZE];
+char usersRatingBuffer[USERS_RATING_TEXT_SIZE];
 
 static struct MovieUIScreen {
     Window *window;
@@ -190,21 +190,11 @@ static void movies_screen_unload() {
 #endif
 
     free(MOVIES_BUFFER);
-    free(criticTextWithPercent);
-    free(runtimeTextBuffer);
-    free(usersRatingBuffer);
     if (moviesUI.window) {
         window_destroy(moviesUI.window);
     }
 }
 
-static void draw_outline_around(Layer *layer, GContext* ctx) {
-    GRect lb = layer_get_bounds(layer);
-    //graphics_draw_line(ctx, GPoint(lb.origin.x- 2, lb.size.h + lb.origin.y + 1), GPoint(lb.origin.x + lb.size.w + 2, lb.size.h + lb.origin.y + 1));
-    graphics_context_set_stroke_color(ctx, THEME_COLOR_BACKGROUND_PRIMARY);
-    graphics_context_set_stroke_width(ctx, 3);
-    graphics_draw_line(ctx, GPoint(lb.origin.x, lb.origin.y), GPoint(lb.origin.x + lb.size.w, lb.origin.y));
-}
 
 #ifndef PBL_ROUND
 
@@ -217,9 +207,9 @@ static void movies_screen_load(Window *window) {
 
     moviesUI.actionBar = action_bar_layer_create();
     action_bar_layer_add_to_window(moviesUI.actionBar, moviesUI.window);
-    
+
     action_bar_layer_set_background_color(moviesUI.actionBar, PBL_IF_COLOR_ELSE(THEME_COLOR_BACKGROUND_PRIMARY, GColorBlack));
-    
+
     GRect aBarBounds = layer_get_bounds(action_bar_layer_get_layer(moviesUI.actionBar));
     //remove for now, add later
     action_bar_layer_remove_from_window(moviesUI.actionBar);
@@ -230,7 +220,7 @@ static void movies_screen_load(Window *window) {
 
     moviesUI.runtimeTxt = text_layer_create(GRect(0, startY, 60, UI_RUNTIME_HEIGHT));
     text_layer_set_font(moviesUI.runtimeTxt, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-    
+
     text_layer_set_background_color(moviesUI.runtimeTxt, THEME_COLOR_BACKGROUND_PRIMARY);
     text_layer_set_text_color(moviesUI.runtimeTxt, GColorWhite);
 
@@ -255,7 +245,7 @@ static void movies_screen_load(Window *window) {
     text_layer_set_text_alignment(moviesUI.titleTxt, GTextAlignmentCenter);
     layer_add_child(windowLayer, text_layer_get_layer(moviesUI.titleTxt));
     text_layer_set_overflow_mode(moviesUI.titleTxt, GTextOverflowModeFill);
-    text_layer_enable_screen_text_flow_and_paging(moviesUI.titleTxt, 2);
+    
 
 
     UI_INC_Y(startY, UI_TITLE_HEIGHT);
@@ -383,8 +373,8 @@ static void movies_screen_load(Window *window) {
             .background = THEME_COLOR_BACKGROUND_PRIMARY
         }
     };
-    
-    
+
+
     const ContentIndicatorConfig upConfig = (ContentIndicatorConfig){
         .layer = moviesUI.upIndicatorLayer,
         .times_out = false,
@@ -395,7 +385,7 @@ static void movies_screen_load(Window *window) {
             .background = THEME_COLOR_BACKGROUND_PRIMARY
         }
     };
-    
+
     content_indicator_configure_direction(moviesUI.indicator, ContentIndicatorDirectionUp, &upConfig);
     content_indicator_configure_direction(moviesUI.indicator, ContentIndicatorDirectionDown, &downConfig);
 
@@ -408,24 +398,22 @@ static void movies_screen_load(Window *window) {
 //void theatres_screen_initialize(int, enum TheatreUiMode, char*);
 
 void movies_screen_init(int recordCount, enum MovieUIMode mode, char *theatreId) {
+    
     moviesUI.total = (uint8_t) recordCount;
     moviesUI.currentIndex = 0;
     moviesUI.currentMode = mode;
     moviesUI.currentTheatreId = theatreId;
 
     moviesUI.window = window_create();
-
+    preloader_set_hidden(moviesUI.window);
     window_set_window_handlers(moviesUI.window, (WindowHandlers) {
         .load = movies_screen_load,
         .unload = movies_screen_unload,
-        .appear = preloader_set_hidden,
+        //.appear = preloader_set_hidden,
     });
 
 
     const bool animated = true;
-    criticTextWithPercent = BUFFER_CREATE(CRTICS_TEXT_SIZE - 1);
-    runtimeTextBuffer = BUFFER_CREATE(RUNTIME_TEXT_SIZE - 1);
-    usersRatingBuffer = BUFFER_CREATE(USERS_RATING_TEXT_SIZE - 1);
 
     window_stack_push(moviesUI.window, animated);
 }
