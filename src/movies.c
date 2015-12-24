@@ -217,7 +217,9 @@ static void movies_screen_load(Window *window) {
 
     moviesUI.actionBar = action_bar_layer_create();
     action_bar_layer_add_to_window(moviesUI.actionBar, moviesUI.window);
-    action_bar_layer_set_background_color(moviesUI.actionBar, THEME_COLOR_BACKGROUND_PRIMARY);
+    
+    action_bar_layer_set_background_color(moviesUI.actionBar, PBL_IF_COLOR_ELSE(THEME_COLOR_BACKGROUND_PRIMARY, GColorBlack));
+    
     GRect aBarBounds = layer_get_bounds(action_bar_layer_get_layer(moviesUI.actionBar));
     //remove for now, add later
     action_bar_layer_remove_from_window(moviesUI.actionBar);
@@ -291,9 +293,9 @@ static void movies_screen_load(Window *window) {
     moviesUI.downIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_DOWN);
 
     if (moviesUI.currentMode == MovieUIModeMovies) {
-        moviesUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_THEATRE_WHITE);
+        moviesUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_THEATRE);
     } else {
-        moviesUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME_WHITE);
+        moviesUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME);
     }
 
     action_bar_layer_set_icon(moviesUI.actionBar, BUTTON_ID_SELECT, moviesUI.selectIcon);

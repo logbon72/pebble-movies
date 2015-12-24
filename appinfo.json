@@ -32,11 +32,6 @@
       },
       {
         "type": "png",
-        "name": "ICON_STATUS_BAR",
-        "file": "icons/icon_status.png"
-      },
-      {
-        "type": "png",
         "name": "ICON_MAIN",
         "file": "icons/icon.png",
         "menuIcon": true
@@ -52,27 +47,27 @@
         "file": "icons/theatre.png"
       },
       {
-        "type": "png-trans",
+        "type": "png",
         "name": "ICON_A_BAR_SHOWTIME",
         "file": "icons/showtime_small.png"
       },
       {
-        "type": "png-trans",
+        "type": "png",
         "name": "ICON_A_BAR_MOVIE",
         "file": "icons/movie_small.png"
       },
       {
-        "type": "png-trans",
+        "type": "png",
         "name": "ICON_A_BAR_THEATRE",
         "file": "icons/theatre_small.png"
       },
       {
-        "type": "bitmap",
+        "type": "png",
         "name": "ICON_A_BAR_UP",
         "file": "icons/action_bar_icon_up.png"
       },
       {
-        "type": "bitmap",
+        "type": "png",
         "name": "ICON_A_BAR_DOWN",
         "file": "icons/action_bar_icon_down.png"
       },

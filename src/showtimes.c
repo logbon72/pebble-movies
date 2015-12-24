@@ -103,6 +103,7 @@ static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *
             showtimesUI.cantBuyIcon;
     menu_cell_basic_draw(ctx, cell_layer, showtime.time, showtimeType, icon);
 #endif
+    
 #ifndef PBL_RECT
     _Bool canBuy = showtime.link[0] == SHOWTIME_CAN_BUY;
     if (showtime.type[0] == SHOWTIME_TYPE_3D) {

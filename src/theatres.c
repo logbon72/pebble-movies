@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include <pebble_fonts.h>
+#include <gcolor_definitions.h>
 #include "pbmovies.h"
 #include "theatres.h"
 #include "preloader.h"
@@ -134,7 +135,7 @@ static void theatres_screen_load(Window *window) {
 
     //now add action bar!!!
     theatresUI.actionBar = action_bar_layer_create();
-    action_bar_layer_set_background_color(theatresUI.actionBar, THEME_COLOR_BACKGROUND_SECONDARY);
+    action_bar_layer_set_background_color(theatresUI.actionBar, PBL_IF_COLOR_ELSE(THEME_COLOR_BACKGROUND_SECONDARY, GColorBlack));
     action_bar_layer_add_to_window(theatresUI.actionBar, theatresUI.window);
 
     //icons
@@ -142,9 +143,9 @@ static void theatres_screen_load(Window *window) {
     theatresUI.downIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_DOWN);
 
     if (theatresUI.currentMode == TheatreUIModeTheatres) {
-        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE_WHITE);
+        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_MOVIE);
     } else {
-        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME_WHITE);
+        theatresUI.selectIcon = gbitmap_create_with_resource(RESOURCE_ID_ICON_A_BAR_SHOWTIME);
     }
 
     action_bar_layer_set_icon(theatresUI.actionBar, BUTTON_ID_SELECT, theatresUI.selectIcon);
