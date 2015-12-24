@@ -33,7 +33,6 @@ static void screen_load(Window *window) {
     bitmap_layer_set_alignment(qrCodeScreen.qrCodeLayer, GAlignCenter);
 
     layer_add_child(window_layer, bitmap_layer_get_layer(qrCodeScreen.qrCodeLayer));
-
 }
 
 static void screen_unload() {

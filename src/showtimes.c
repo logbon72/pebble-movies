@@ -9,6 +9,11 @@ static const char* typeDigital = "Digital";
 static const char* typeDigital3D = "3D";
 static const char* typeIMAX = "IMAX 3D";
 //static const char* sectionHeader = "Available Showtimes";
+#ifndef PBL_RECT
+static const char* typeDigitalQr = "Digital | QR";
+static const char* typeDigital3DQr = "3D | QR";
+static const char* typeIMAXQr = "IMAX 3D | QR";
+#endif
 
 #define SHOWTIME_TYPE_DIGITAL '0'
 #define SHOWTIME_TYPE_3D '1'
@@ -85,6 +90,8 @@ static void menu_draw_header(GContext* ctx, const Layer *cell_layer, uint16_t se
 static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *ci, void *data) {
     const char *showtimeType;
     struct Showtime showtime = get_showtime_at(ci->row);
+
+#ifndef PBL_ROUND    
     if (showtime.type[0] == SHOWTIME_TYPE_3D) {
         showtimeType = typeDigital3D;
     } else if (showtime.type[0] == SHOWTIME_TYPE_IMAX) {
@@ -92,12 +99,19 @@ static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *
     } else {
         showtimeType = typeDigital;
     }
-
-#ifndef PBL_ROUND    
     GBitmap *icon = showtime.link[0] == SHOWTIME_CAN_BUY ? showtimesUI.canBuyIcon :
             showtimesUI.cantBuyIcon;
     menu_cell_basic_draw(ctx, cell_layer, showtime.time, showtimeType, icon);
-#else
+#endif
+#ifndef PBL_RECT
+    _Bool canBuy = showtime.link[0] == SHOWTIME_CAN_BUY;
+    if (showtime.type[0] == SHOWTIME_TYPE_3D) {
+        showtimeType = canBuy ? typeDigital3DQr : typeDigital3D;
+    } else if (showtime.type[0] == SHOWTIME_TYPE_IMAX) {
+        showtimeType = canBuy ? typeIMAXQr : typeIMAX;
+    } else {
+        showtimeType = canBuy ? typeDigitalQr : typeDigital;
+    }
     menu_cell_basic_draw(ctx, cell_layer, showtime.time, showtimeType, NULL);
 #endif
 
