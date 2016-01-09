@@ -1,0 +1,53 @@
+{
+  "success": 1,
+  "time": "2016-01-09T22:15:00-08:00",
+  "layout": {
+    "type": "calendarPin",
+    "title": "Star Wars: The Force Awakens",
+    "subtitle": "Bow Tie Ziegfeld Theater",
+    "body": "Starts by 10:15pm, at Bow Tie Ziegfeld Theater, 141 West 54th Street, New York NY 10019",
+    "tinyIcon": "system://images/MOVIE_EVENT",
+    "smallIcon": "system://images/MOVIE_EVENT",
+    "largeIcon": "system://images/MOVIE_EVENT"
+  },
+  "id": "showtime-19724-SBwsj51v",
+  "duration": 135,
+  "createNotification": {
+    "layout": {
+      "type": "genericNotification",
+      "title": "Showtime Pin Set",
+      "body": "Timeline pin for Star Wars: The Force Awakens at Bow Tie Ziegfeld Theater has been created.",
+      "tinyIcon": "system://images/MOVIE_EVENT",
+      "largeIcon": "system://images/MOVIE_EVENT"
+    }
+  },
+  "updateNotification": {
+    "layout": {
+      "type": "genericNotification",
+      "title": "Showtime Pin Updated",
+      "body": "Timeline pin for Star Wars: The Force Awakens at Bow Tie Ziegfeld Theater has been updated.",
+      "tinyIcon": "system://images/MOVIE_EVENT",
+      "largeIcon": "system://images/MOVIE_EVENT"
+    }
+  },
+  "reminders": [
+    {
+      "time": "2016-01-09T21:15:00-08:00",
+      "layout": {
+        "type": "genericReminder",
+        "title": "Reminder: Star Wars: The Force Awakens",
+        "body": "Hey, movie starts by 10:15pm, at Bow Tie Ziegfeld Theater, 141 West 54th Street, New York NY 10019",
+        "tinyIcon": "system://images/MOVIE_EVENT",
+        "smallIcon": "system://images/MOVIE_EVENT",
+        "largeIcon": "system://images/MOVIE_EVENT"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "type": "openWatchApp",
+      "launchCode": 10,
+      "title": "Buy Ticket"
+    }
+  ]
+}

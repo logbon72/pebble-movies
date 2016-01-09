@@ -3,7 +3,7 @@
 
   var NUMBER_RADIX = 32;
 
-  var CURRENT_VERSION = 20151224.02;
+  var CURRENT_VERSION = 20160110.01;
   var CACHE_EXPIRY = 1800000;
 
   var LOCATION_EXPIRY = 1200000;
@@ -14,6 +14,7 @@
   var SETTING_DEFAULT_COUNTRY = "DefaultCountry";
   var SETTING_DEFAULT_UNIT = "DefaultUnit";
   var SETTING_FORCE_LOCATION = "ForceLocation";
+  var SETTING_REMINDER = "Reminder";
 
   var PROXY_SERVICE_URL = "http://pbmovies.orilogbon.me/proxy/";
 
@@ -29,6 +30,8 @@
 //var DISTANCE_UNIT_MILES = "mi";
   var DISTANCE_MILE_IN_M = 0.000621371;
   var DISTANCE_KM_IN_M = 0.001;
+  
+  var DEFAULT_REMINDER = 30;
 
   var PRELOAD_WAIT_TIME = 2000;
 
@@ -74,6 +77,10 @@
   };
 
   var numberDecode = function (str) {
+    if (str.indexOf('$') > -1) {
+      return parseInt(str.replace('$', ''), 10);
+    }
+    
     return parseInt(str, NUMBER_RADIX);
   };
 
@@ -420,7 +427,7 @@
           //Advance to next  page.
           if (page < totalPages && page < MAX_PAGES) {
             messageHandler.sendData(msgCode, data, page + 1, retries);
-        }
+          }
 
         }, function (e) {
           if (retries++ < 3) {
@@ -683,6 +690,16 @@
     var init = function () {
       //var locationInfo = service.get('location', true);
       service.loadLoactionInfo();
+
+      pebble.getTimelineToken(
+          function (token) {
+            console.log('My timeline token is ' + token);
+          },
+          function (error) {
+            console.log('Error getting timeline token: ' + error);
+          }
+      );
+
       window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
       _initRegistration();
     };
@@ -731,7 +748,7 @@
     //console.log("configuration closed");
     // webview closed
     var options = JSON.parse(decodeURIComponent(e.response));
-    var keys = [SETTING_DEFAULT_CITY, SETTING_DEFAULT_COUNTRY, SETTING_DEFAULT_POSTAL_CODE, SETTING_DEFAULT_UNIT, SETTING_FORCE_LOCATION];
+    var keys = [SETTING_DEFAULT_CITY, SETTING_DEFAULT_COUNTRY, SETTING_DEFAULT_POSTAL_CODE, SETTING_DEFAULT_UNIT, SETTING_FORCE_LOCATION, SETTING_REMINDER];
     var changed = false;
     if (options) {
       for (var i = 0; i < keys.length; i++) {
@@ -757,7 +774,8 @@
     console.log("showing configuration");
     var proxyUrl = movieService.proxy('settings', {
       'unit': movieService.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM),
-      'forceLocation': movieService.get(SETTING_FORCE_LOCATION, false, "0")
+      'forceLocation': movieService.get(SETTING_FORCE_LOCATION, false, "0"),
+      'Reminder' : movieService.get(SETTING_REMINDER, false, DEFAULT_REMINDER)
     }, null, null, true);
     console.log("opening settings url: " + proxyUrl);
     pebble.openURL(proxyUrl);
@@ -788,7 +806,7 @@
 
   function transferBytes(bytes, chunkSize, msgCode, successCb, failureCb) {
     var retries = 0;
-    
+
     var success = function () {
       if (successCb !== undefined) {
         successCb();
@@ -869,8 +887,8 @@
 
     return bufView;
   }
-  
-  function byteSize(str){
+
+  function byteSize(str) {
     return window.unescape(window.encodeURIComponent(str)).length;
   }
   /**

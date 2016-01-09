@@ -23,7 +23,7 @@ static uint32_t totalReceived = 0;
 static uint32_t bufferSize = 0;
 AppTimer *inboxWaitTimer;
 uint8_t lastPage = 0;
-
+static bool launchCodeProcessed = false;
 
 static void reset_message_receiver() {
     messageBuffer = NULL;
@@ -36,7 +36,7 @@ static void reset_message_receiver() {
 }
 
 static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, Tuple *tuple) {
-    
+
     if (!tuple || page != lastPage + 1) {
         //APP_LOG(APP_LOG_LEVEL_WARNING, "Message broken");
         lastPage = 0;
@@ -93,14 +93,14 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
             ++totalReceived;
         }
     } else {
-        uint16_t bytesToCopy = (totalReceived + tuple->length) > QR_CODE_BUFFER_MAX_SIZE ? 
-            (QR_CODE_BUFFER_MAX_SIZE - totalReceived) : tuple->length;
+        uint16_t bytesToCopy = (totalReceived + tuple->length) > QR_CODE_BUFFER_MAX_SIZE ?
+                (QR_CODE_BUFFER_MAX_SIZE - totalReceived) : tuple->length;
         memcpy(QR_CODE_BUFFER + (page - 1) * JS_DATA_PER_SEND, tuple->value->data, bytesToCopy);
         totalReceived += bytesToCopy;
     }
 
     //APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
-    
+
     if (totalReceived >= size) {
         if (stringDataMode && messageBuffer) {
             *messageBuffer = '\0';
@@ -215,7 +215,22 @@ static void handle_init_failed() {
 static void handle_start_app() {
     splash_screen_hide();
     //home_screen_init();
-    start_screen_init();
+    uint32_t launchCode = launch_get_args();
+    if (!launchCodeProcessed && launchCode > 0) {
+        char showtimeId[15];
+        //add a special character to inform JavaScript to skip decoding
+        snprintf(showtimeId, 15, "%u$", (unsigned int) launchCode);
+        if (send_message_with_string(PB_MSG_OUT_GET_QR_CODE,
+                APP_KEY_SHOWTIME_ID, showtimeId, 0, NULL)) {
+            launchCodeProcessed = true;
+            preloader_init();
+        }
+
+    } else {
+        start_screen_init();
+    }
+
+
 }
 
 short int record_count(char* string, const char delimeter) {
