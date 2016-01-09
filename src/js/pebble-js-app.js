@@ -40,6 +40,8 @@
   var KEY_SECRET_KEY = "secretKey";
   var DAYS_TO_BROWSE = 5;
 
+  var FEATURE_NOTIFY_TIMELINE = "featureNotifyTimeline-1";
+
   var showtimeTypeMask = {
     'digital': 0,
     'digital 3D': 1,
@@ -258,7 +260,7 @@
                 if (lastUpdateAlert.version < response.version ||
                     currentTimeInMs() - lastUpdateAlert.time >= 86400000) {
                   pebble.showSimpleNotificationOnPebble("Update Available", "A new version Pebble Movies has been published, visit Pebble App store to update!");
-                  service.store("lastUpdateAlert", {'version': response.version, 'time': currentTimeInMs()});
+                  service.store("lastUpdateAlert", {'version': response.version, 'time': currentTimeInMs()}, true);
                 }
               }
               //set preloading
@@ -402,9 +404,9 @@
                 showtimeId: showtimeId,
                 reminder: reminder,
                 timelineToken: token
-              }, function(pin){
-                console.log("Pin was successfully generated, ID: "+ pin.id);
-              }, function(error){
+              }, function (pin) {
+                console.log("Pin was successfully generated, ID: " + pin.id);
+              }, function (error) {
                 pebble.showSimpleNotificationOnPebble('Reminder Failure', "The movie showtime could not be put in your timeline at the moment.");
               });
             },
@@ -428,7 +430,7 @@
         }
         return data;
       },
-      sendData: function (msgCode, data, page, retries) {
+      sendData: function (msgCode, data, page, retries, successCallback) {
         lastPbMsgIn = msgCode;
         retries = retries || 0;
         page = page || 1;
@@ -449,14 +451,18 @@
           retries = 0;
           //Advance to next  page.
           if (page < totalPages && page < MAX_PAGES) {
-            MessageHandler.sendData(msgCode, data, page + 1, retries);
+            MessageHandler.sendData(msgCode, data, page + 1, retries, successCallback);
+          } else {
+            if (successCallback) {
+              successCallback();
+            }
           }
 
         }, function (e) {
           if (retries++ < 3) {
             //retry same page
             console.log("Retrying... [" + retries + "] previous failed: " + JSON.stringify(e));
-            MessageHandler.sendData(msgCode, data, page, retries);
+            MessageHandler.sendData(msgCode, data, page, retries, successCallback);
           } else {
             console.log("Failed...");
           }
@@ -496,8 +502,16 @@
         }
         //bug 
         if (records.length) {
+          var tlFeatureNotify = function () {
+            var isNotified = service.get(FEATURE_NOTIFY_TIMELINE, false, false);
+            //show alert ?
+            if (!isNotified) {
+              pebble.showSimpleNotificationOnPebble("Timeline Feature", "New feature: You can now add  movie tmes to your timeline. To add a movie time's pin, hold down the select button for 1 second with the desired movie time selected.\n\nYou can still get QR Code by simply tapping the select button.\n\nTo set the time for reminders check the settings page.");
+              service.store(FEATURE_NOTIFY_TIMELINE, true, false);
+            }
+          };
           //console.log("Showtimes: " + JSON.stringify(records));
-          MessageHandler.sendData(pebbleMessagesIn.showtimes, records.join(DELIMETER_RECORD));
+          MessageHandler.sendData(pebbleMessagesIn.showtimes, records.join(DELIMETER_RECORD), 1, 0, tlFeatureNotify);
         } else {
           MessageHandler.sendNoData("No showtimes");
         }
@@ -603,7 +617,7 @@
         } catch (e) {
           console.log("Storage Object error");
         }
-        return defaultValue ? defaultValue : null;
+        return defaultValue !== undefined ? defaultValue : undefined;
       },
       proxy: function (command, data, successCallback, errorCallback, urlOnly) {
         var method = PostMethods.indexOf(command) > -1 ? "POST" : "GET";
