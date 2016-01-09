@@ -67,6 +67,7 @@ enum PbMsgOut {
     PB_MSG_OUT_GET_MOVIE_THEATRES = 4,
     PB_MSG_OUT_GET_SHOWTIMES = 5,
     PB_MSG_OUT_GET_QR_CODE = 6,
+    PB_MSG_OUT_PUSH_PIN = 7,
 };
 
 

@@ -30,7 +30,7 @@
 //var DISTANCE_UNIT_MILES = "mi";
   var DISTANCE_MILE_IN_M = 0.000621371;
   var DISTANCE_KM_IN_M = 0.001;
-  
+
   var DEFAULT_REMINDER = 30;
 
   var PRELOAD_WAIT_TIME = 2000;
@@ -69,7 +69,8 @@
     getTheatreMovies: 3,
     getMovieTheatres: 4,
     getShowtimes: 5,
-    getQrCode: 6
+    getQrCode: 6,
+    pushPin: 7
   };
 
   var numberEncode = function (num) {
@@ -80,7 +81,7 @@
     if (str.indexOf('$') > -1) {
       return parseInt(str.replace('$', ''), 10);
     }
-    
+
     return parseInt(str, NUMBER_RADIX);
   };
 
@@ -155,7 +156,7 @@
     var locationOptions = {"timeout": LOCATION_TIMEOUT, "maximumAge": LOCATION_EXPIRY};
     var currentDate = dateYmd();
     var dateOffset = 0;
-    var PostMethods = ["register"];
+    var PostMethods = ["register", "pin-push"];
     var lastPbMsgIn;
     var isPreloading = false;
     //called on successful location detection
@@ -297,54 +298,54 @@
       return null;
     };
 
-    var messageHandler = {
+    var MessageHandler = {
       init: function () {
         initFunction();
       },
       getMovies: function () {
-        messageHandler.checkPreloaded(function (data) {
+        MessageHandler.checkPreloaded(function (data) {
           var movies = data.movies;
           if (movies && movies.length > 0) {
-            messageHandler.sendData(pebbleMessagesIn.movies, movieUtils.convertToData(movies), 1, 0, 0);
+            MessageHandler.sendData(pebbleMessagesIn.movies, movieUtils.convertToData(movies), 1, 0, 0);
           } else {
-            messageHandler.sendNoData("No movies now");
+            MessageHandler.sendNoData("No movies now");
           }
         });
       },
       getMovieTheatres: function (dataIn) {
-        messageHandler.checkPreloaded(function (data) {
+        MessageHandler.checkPreloaded(function (data) {
           var movieId = numberDecode(dataIn.movieId);
           var movie = findIdInList(data.movies, movieId);
           //theatres is index 7
           var theatres = movie ? findIdsInList(data.theatres, movie[7]) : [];
           if (theatres.length > 0) {
-            messageHandler.sendData(pebbleMessagesIn.movieTheatres, theatreUtils.convertToData(theatres));
+            MessageHandler.sendData(pebbleMessagesIn.movieTheatres, theatreUtils.convertToData(theatres));
           } else {
-            messageHandler.sendNoData("No theatres now");
+            MessageHandler.sendNoData("No theatres now");
           }
         });
       },
       getTheatres: function () {
-        messageHandler.checkPreloaded(function (data) {
+        MessageHandler.checkPreloaded(function (data) {
           var theatres = data.theatres;
           if (theatres && theatres.length > 0) {
-            messageHandler.sendData(pebbleMessagesIn.theatres, theatreUtils.convertToData(theatres));
+            MessageHandler.sendData(pebbleMessagesIn.theatres, theatreUtils.convertToData(theatres));
           } else {
-            messageHandler.sendNoData("No theatres now");
+            MessageHandler.sendNoData("No theatres now");
           }
         });
       },
       getTheatreMovies: function (dataIn) {
-        messageHandler.checkPreloaded(function (data) {
+        MessageHandler.checkPreloaded(function (data) {
           var theatreId = numberDecode(dataIn.theatreId);
           var theatre = findIdInList(data.theatres, theatreId);
           //console.log("T: "+JSON.stringify(theatre)+ " Movies: "+ JSON.stringify(theatre[4]));
           var movies = theatre ? findIdsInList(data.movies, theatre[4], 0) : [];
           //console.log("TMovies: "+JSON.stringify(movies));
           if (movies.length > 0) {
-            messageHandler.sendData(pebbleMessagesIn.theatreMovies, movieUtils.convertToData(movies));
+            MessageHandler.sendData(pebbleMessagesIn.theatreMovies, movieUtils.convertToData(movies));
           } else {
-            messageHandler.sendNoData("No movies now");
+            MessageHandler.sendNoData("No movies now");
           }
         });
       },
@@ -353,18 +354,18 @@
         var data = service.isCached(KEY_PRELOAD);
         if (isPreloading) {//if preloading, then wait
           window.setTimeout(function () {
-            messageHandler.checkPreloaded(callback);
+            MessageHandler.checkPreloaded(callback);
           }, PRELOAD_WAIT_TIME);
         } else if (!data) {//not preloading, and no data, try to preload
           preload(function () {
-            messageHandler.checkPreloaded(callback);
-          }, messageHandler.handleErrors);
+            MessageHandler.checkPreloaded(callback);
+          }, MessageHandler.handleErrors);
         } else {
           callback(data); //data preloaded, call callback
         }
       },
       getShowtimes: function (dataIn) {
-        messageHandler.checkPreloaded(function (data) {
+        MessageHandler.checkPreloaded(function (data) {
           var key = numberDecode(dataIn.theatreId) + "." + numberDecode(dataIn.movieId);
           //console.log("Showtime Key: " + key);
           var showtimes = data.showtimes ? data.showtimes[key] : [];
@@ -374,7 +375,7 @@
       getQrCode: function (dataIn) {
         var showtimeId = numberDecode(dataIn.showtimeId);
         console.log('Making QR Code call for showtime: ' + showtimeId + " original: " + dataIn.showtimeId);
-        var resourceUrl = service.proxy('qr', {"showtime_id": showtimeId}, null, messageHandler.handleErrors, true);
+        var resourceUrl = service.proxy('qr', {"showtime_id": showtimeId}, null, MessageHandler.handleErrors, true);
         console.log("Resource URL: " + resourceUrl);
         downloadBinaryResource(resourceUrl, function (bytes) {
           transferBytes(bytes, MAX_DATA_LENGTH, pebbleMessagesIn.qrCode,
@@ -389,6 +390,28 @@
         }, function (e) {
           console.log('QRCode could not downloaded');
         });
+      },
+      pushPin: function (dataIn) {
+        var showtimeId = numberDecode(dataIn.showtimeId);
+        console.log('Pushing Pin for Showtime : ' + showtimeId + " original: " + dataIn.showtimeId);
+        pebble.showSimpleNotificationOnPebble("Reminder Set", "Timeline request is being processed.");
+        var reminder = service.get(SETTING_REMINDER, false, DEFAULT_REMINDER);
+        pebble.getTimelineToken(
+            function (token) {
+              service.proxy('pin-push', {
+                showtimeId: showtimeId,
+                reminder: reminder,
+                timelineToken: token
+              }, function(pin){
+                console.log("Pin was successfully generated, ID: "+ pin.id);
+              }, function(error){
+                pebble.showSimpleNotificationOnPebble('Reminder Failure', "The movie showtime could not be put in your timeline at the moment.");
+              });
+            },
+            function (error) {
+              console.log('Error getting timeline token: ' + error);
+            }
+        );
       },
       handleErrors: function (err) {
         //console.log("Errors occured while getting data :" + JSON.stringify(err));
@@ -409,7 +432,7 @@
         lastPbMsgIn = msgCode;
         retries = retries || 0;
         page = page || 1;
-        data = messageHandler.truncateData(data);
+        data = MessageHandler.truncateData(data);
 
         var totalPages = Math.ceil(data.length / MAX_DATA_LENGTH);
         var offset = (page - 1) * MAX_DATA_LENGTH;
@@ -426,14 +449,14 @@
           retries = 0;
           //Advance to next  page.
           if (page < totalPages && page < MAX_PAGES) {
-            messageHandler.sendData(msgCode, data, page + 1, retries);
+            MessageHandler.sendData(msgCode, data, page + 1, retries);
           }
 
         }, function (e) {
           if (retries++ < 3) {
             //retry same page
             console.log("Retrying... [" + retries + "] previous failed: " + JSON.stringify(e));
-            messageHandler.sendData(msgCode, data, page, retries);
+            MessageHandler.sendData(msgCode, data, page, retries);
           } else {
             console.log("Failed...");
           }
@@ -474,9 +497,9 @@
         //bug 
         if (records.length) {
           //console.log("Showtimes: " + JSON.stringify(records));
-          messageHandler.sendData(pebbleMessagesIn.showtimes, records.join(DELIMETER_RECORD));
+          MessageHandler.sendData(pebbleMessagesIn.showtimes, records.join(DELIMETER_RECORD));
         } else {
-          messageHandler.sendNoData("No showtimes");
+          MessageHandler.sendNoData("No showtimes");
         }
       },
       formatTime: function (showdate, showtime) {
@@ -668,9 +691,9 @@
         //console.log("Handling message... "+JSON.stringify(payload));
         for (var i in pebbleMessagesOut) {
           if (pebbleMessagesOut[i] === msgCode) {
-            if (messageHandler.hasOwnProperty(i)) {
+            if (MessageHandler.hasOwnProperty(i)) {
               //console.log("Handler found ");
-              return messageHandler[i](payload);
+              return MessageHandler[i](payload);
             } else {
               console.log("Message handler does not have method for: " + i);
               return null;
@@ -693,7 +716,7 @@
 
       pebble.getTimelineToken(
           function (token) {
-            console.log('My timeline token is ' + token);
+            console.log('Application Launcing, timelne token is: ' + token);
           },
           function (error) {
             console.log('Error getting timeline token: ' + error);
@@ -775,7 +798,7 @@
     var proxyUrl = movieService.proxy('settings', {
       'unit': movieService.get(SETTING_DEFAULT_UNIT, false, DISTANCE_UNIT_KM),
       'forceLocation': movieService.get(SETTING_FORCE_LOCATION, false, "0"),
-      'Reminder' : movieService.get(SETTING_REMINDER, false, DEFAULT_REMINDER)
+      'Reminder': movieService.get(SETTING_REMINDER, false, DEFAULT_REMINDER)
     }, null, null, true);
     console.log("opening settings url: " + proxyUrl);
     pebble.openURL(proxyUrl);

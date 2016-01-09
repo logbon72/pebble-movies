@@ -103,7 +103,7 @@ static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *
             showtimesUI.cantBuyIcon;
     menu_cell_basic_draw(ctx, cell_layer, showtime.time, showtimeType, icon);
 #endif
-    
+
 #ifndef PBL_RECT
     _Bool canBuy = showtime.link[0] == SHOWTIME_CAN_BUY;
     if (showtime.type[0] == SHOWTIME_TYPE_3D) {
@@ -119,9 +119,9 @@ static void menu_cell_drawer(GContext* ctx, const Layer *cell_layer, MenuIndex *
 
 }
 
-static void menu_select_handler(MenuLayer *menu_layer, MenuIndex *ci, void *data) {
+static void menu_select_handler(ClickRecognizerRef recognizer, void *context) {
     // Use the row to specify which item will receive the select action
-    struct Showtime showtime = get_showtime_at(ci->row);
+    struct Showtime showtime = get_showtime_at(menu_layer_get_selected_index(showtimesUI.menuLayer).row);
 
     if (showtime.link[0] == SHOWTIME_CAN_BUY) {
         if (send_message_with_string(PB_MSG_OUT_GET_QR_CODE,
@@ -130,6 +130,30 @@ static void menu_select_handler(MenuLayer *menu_layer, MenuIndex *ci, void *data
         }
     }
 }
+
+static void menu_select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+    // Use the row to specify which item will receive the select action
+    struct Showtime showtime = get_showtime_at(menu_layer_get_selected_index(showtimesUI.menuLayer).row);
+    send_message_with_string(PB_MSG_OUT_PUSH_PIN, APP_KEY_SHOWTIME_ID, showtime.id, 0, NULL);
+}
+
+static void menu_up_handler(ClickRecognizerRef recognizer, void *context) {
+    menu_layer_set_selected_next(showtimesUI.menuLayer, true, MenuRowAlignCenter, false);
+}
+
+static void menu_down_handler(ClickRecognizerRef recognizer, void *context) {
+    menu_layer_set_selected_next(showtimesUI.menuLayer, false, MenuRowAlignCenter, false);
+}
+
+static void window_click_config_provider(void *context) {
+    window_single_click_subscribe(BUTTON_ID_SELECT, menu_select_handler);
+    window_multi_click_subscribe(BUTTON_ID_SELECT, 2, 0, 300, true, menu_select_long_click_handler);
+    //window_single_repeating_click_subscribe(BUTTON_ID_SELECT, 100, menu_select_long_click_handler);
+    //window_long_click_subscribe(BUTTON_ID_SELECT, 0, menu_select_long_click_handler, NULL);
+    window_single_click_subscribe(BUTTON_ID_UP, menu_up_handler);
+    window_single_click_subscribe(BUTTON_ID_DOWN, menu_down_handler);
+}
+
 
 static void showtimes_load(Window *window) {
     Layer *windowLayer = window_get_root_layer(showtimesUI.window);
@@ -144,16 +168,20 @@ static void showtimes_load(Window *window) {
         .get_header_height = menu_header_height_callback,
         .draw_header = menu_draw_header,
         .draw_row = menu_cell_drawer,
-        .select_click = menu_select_handler,
+        //        .select_click = menu_select_handler,
+        //        .select_long_click = menu_select_long_click_handler
     });
 
-    // Bind the menu layer's click config provider to the window for interactivity
-    menu_layer_set_click_config_onto_window(showtimesUI.menuLayer, showtimesUI.window);
+    //Bind the menu layer's click config provider to the window for interactivity
+    //menu_layer_set_click_config_onto_window(showtimesUI.menuLayer, showtimesUI.window);
+    window_set_click_config_provider(showtimesUI.window, window_click_config_provider);
+
 #ifndef PBL_BW
     set_menu_color(showtimesUI.menuLayer);
 #endif
     // Add it to the window for display
     layer_add_child(windowLayer, menu_layer_get_layer(showtimesUI.menuLayer));
+
 }
 
 static void showtimes_unload(Window *window) {
@@ -185,8 +213,6 @@ void showtimes_init() {
         .unload = showtimes_unload,
         //.appear = preloader_set_hidden,
     });
-
-
 
     window_stack_push(showtimesUI.window, true);
 
