@@ -3,7 +3,7 @@
 
   var NUMBER_RADIX = 32;
 
-  var CURRENT_VERSION = 20160110.01;
+  var CURRENT_VERSION = 20160111.01;
   var CACHE_EXPIRY = 1800000;
 
   var LOCATION_EXPIRY = 1200000;
@@ -35,7 +35,7 @@
 
   var PRELOAD_WAIT_TIME = 2000;
 
-  var KEY_PRELOAD = "preloadData24";
+  var KEY_PRELOAD = "preloadData26";
   var KEY_DEVICE_ID = "deviceId";
   var KEY_SECRET_KEY = "secretKey";
   var DAYS_TO_BROWSE = 5;
@@ -246,7 +246,7 @@
         isPreloading = true;
         service.proxy('preload11', {'tries': preloadRetries},
             function (response) {
-              if (response.data && typeof response.data === "object") {
+              if (response.data && !(response.data instanceof Array)) {
                 //console.log("Cachhing data");
                 service.cache(KEY_PRELOAD, response.data);
               }
@@ -506,7 +506,7 @@
             var isNotified = service.get(FEATURE_NOTIFY_TIMELINE, false, false);
             //show alert ?
             if (!isNotified) {
-              pebble.showSimpleNotificationOnPebble("Timeline Feature", "New feature: You can now add  movie tmes to your timeline. To add a movie time's pin, hold down the select button for 1 second with the desired movie time selected.\n\nYou can still get QR Code by simply tapping the select button.\n\nTo set the time for reminders check the settings page.");
+              pebble.showSimpleNotificationOnPebble("Timeline Feature", "New feature: You can now add  movie tmes to your timeline. To add a movie time's pin, click the select button twice with the desired movie time selected.\n\nYou can still get QR Code by simply tapping the select button.\n\nTo set the time for reminders check the settings page.");
               service.store(FEATURE_NOTIFY_TIMELINE, true, false);
             }
           };
