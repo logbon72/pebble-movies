@@ -38,14 +38,16 @@
         "memoryFormat": "1Bit"
       },
       {
-        "type": "png",
+        "type": "bitmap",
+        "memoryFormat": "1Bit",
         "name": "ICON_MOVIES",
         "file": "icons/movie.png"
       },
       {
-        "type": "png",
+        "type": "bitmap",
         "name": "ICON_THEATRES",
-        "file": "icons/theatre.png"
+        "file": "icons/theatre.png",
+        "memoryFormat": "1Bit"
       },
       {
         "type": "png",

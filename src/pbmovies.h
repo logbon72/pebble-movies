@@ -42,6 +42,7 @@ enum APP_KEYS {
 #define BUFFER_CREATE(size)  ((char*) malloc((size + 1) * sizeof (char)))
 #define BUFFER_CREATE_BYTE(size)  ((uint8_t*) malloc(size * sizeof (uint8_t)))
 #define GRectCenterIn(w1, h1, b) (GRect((b.size.w - w1)/2, (b.size.h - h1)/2, w1, h1))
+#define GRectOutset(bounds, w1) (GRect(bounds.origin.x - w1, bounds.origin.y-w1, bounds.size.w+w1, bounds.size.h+w1))
 #define GRectCenter(b) (GPoint(b.origin.x + b.size.w/2, b.origin.y + b.size.h/2))
 
 //now define all message codes

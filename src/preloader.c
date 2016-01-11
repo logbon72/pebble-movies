@@ -2,13 +2,15 @@
 #include "pbmovies.h"
 #include "preloader.h"
 
-#define ANIMATION_TIMEOUT 100
+#define ANIMATION_TIMEOUT 300
 #define STROKE_SIZE 20
-#define SQUARE_LENGTH 100
-#define ANGLE_STEPS 30;
+#define PROGRESS_LAYER_WIDTH 100
+#define PROGRESS_LAYER_HEIGHT 5
+#define PROGRESS_STEP 5
+#define STROKE_WIDTH 2
 #define TEXT_HEIGHT 22
 
-static Layer *square_layer;
+static Layer *progress_layer;
 static char *LOADING_TEXT = "Loading...";
 static char *TIME_OUT = "Connection Timed Out!";
 
@@ -19,72 +21,81 @@ static struct PreloaderScreen {
     AppTimer *timer;
 } preloader;
 
-static int currentAngle = 0;
+static int progressPercent = 0;
 
-static void update_square_layer(Layer *layer, GContext* ctx) {
+static void timer_callback(void *context);
 
+static void update_progress_layer(Layer *layer, GContext* ctx) {
     GRect bounds = layer_get_bounds(layer);
 
     if (!preloader.isOn) {
-        currentAngle = 360;
-    } else {
-        currentAngle += ANGLE_STEPS;
+        progressPercent = 0;
     }
-    graphics_context_set_fill_color(ctx, THEME_COLOR_OUTLINE_PRIMARY);
-    graphics_fill_radial(ctx, bounds, GOvalScaleModeFillCircle, STROKE_SIZE, DEG_TO_TRIGANGLE(0), DEG_TO_TRIGANGLE(currentAngle));
 
-    if (currentAngle >= 360) {
-        currentAngle = 0;
+    graphics_context_set_fill_color(ctx, THEME_COLOR_BACKGROUND_PRIMARY);
+    graphics_context_set_stroke_color(ctx, THEME_COLOR_BACKGROUND_PRIMARY);
+    graphics_context_set_stroke_width(ctx, 1);
+
+
+    graphics_draw_round_rect(ctx, bounds, 2);
+    GRect rec = bounds;
+    rec.size.w = (int16_t) ((PROGRESS_LAYER_WIDTH * progressPercent / 100));
+    graphics_fill_rect(ctx, rec, 2, GCornersAll);
+}
+
+static void timer_cancel() {
+    if (preloader.timer) {
+        app_timer_cancel(preloader.timer);
+        preloader.timer = NULL;
+    }
+}
+
+static void next_timer() {
+    if (preloader.isOn) {
+        preloader.timer = app_timer_register(ANIMATION_TIMEOUT, timer_callback, NULL);
     }
 }
 
 static void timer_callback(void *context) {
-    layer_mark_dirty(square_layer);
-    if (preloader.isOn) {
-        const uint32_t timeout_ms = ANIMATION_TIMEOUT;
-        preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
-    }
+    preloader_set_progress(progressPercent + PROGRESS_STEP, false);
+    next_timer();
 }
 
 static void unload(Window *w) {
     //gpath_destroy(square_path);
-    if (square_layer) {
-        layer_destroy(square_layer);
+    if (progress_layer) {
+        layer_destroy(progress_layer);
     }
     //window_destroy(window);
-    if (preloader.timer) {
-        app_timer_cancel(preloader.timer);
-    }
+    timer_cancel();
     preloader.timer = NULL;
     text_layer_destroy(preloader.statusText);
-    currentAngle = 0;
+    progressPercent = 0;
     //gbitmap_destroy(statusBarIcon);
-    preloader.isOn = 1;
 }
 
 static void preloader_appear(Window *window) {
-    const uint32_t timeout_ms = ANIMATION_TIMEOUT;
-    if (preloader.isOn) {
-        preloader.timer = app_timer_register(timeout_ms, timer_callback, NULL);
-    }
+    next_timer();
 }
 
 static void preloader_load(Window *window) {
-    window_set_background_color(window, THEME_COLOR_BACKGROUND_PRIMARY);
+    //window_set_background_color(window, THEME_COLOR_BACKGROUND_PRIMARY);
     Layer *window_layer = window_get_root_layer(preloader.window);
 
     GRect bounds = layer_get_bounds(window_layer);
-    square_layer = layer_create(GRectCenterIn(SQUARE_LENGTH, SQUARE_LENGTH, bounds));
+    GRect p_layer_bound = GRectCenterIn(PROGRESS_LAYER_WIDTH, PROGRESS_LAYER_HEIGHT, bounds);
+    p_layer_bound.origin.y -= 10;
+    progress_layer = layer_create(p_layer_bound);
 
-    layer_set_update_proc(square_layer, update_square_layer);
-    layer_add_child(window_layer, square_layer);
+    layer_set_update_proc(progress_layer, update_progress_layer);
+    layer_add_child(window_layer, progress_layer);
 
 
     int width = bounds.size.w;
-    preloader.statusText = text_layer_create(GRectCenterIn(width, TEXT_HEIGHT, bounds));
+    preloader.statusText = text_layer_create(GRect(0, p_layer_bound.origin.y + p_layer_bound.size.h + 10, width, TEXT_HEIGHT));
 
-    text_layer_set_background_color(preloader.statusText, THEME_COLOR_BACKGROUND_PRIMARY);
-    text_layer_set_text_color(preloader.statusText, GColorWhite);
+    //text_layer_set_background_color(preloader.statusText, THEME_COLOR_BACKGROUND_PRIMARY);
+    text_layer_set_text_color(preloader.statusText, THEME_COLOR_BACKGROUND_PRIMARY);
     text_layer_set_text_alignment(preloader.statusText, GTextAlignmentCenter);
     text_layer_set_font(preloader.statusText, fonts_get_system_font(FONT_KEY_GOTHIC_18));
     text_layer_set_overflow_mode(preloader.statusText, GTextOverflowModeWordWrap);
@@ -97,16 +108,23 @@ void preloader_init() {
     preloader.window = window_create();
     //STATUS_TEXT = text;
 
+    preloader.isOn = 1;
+    preloader.timer = NULL;
     window_set_window_handlers(preloader.window, (WindowHandlers) {
         .unload = unload,
         .appear = preloader_appear,
         .load = preloader_load
     });
 
+    window_stack_push(preloader.window, true);
+}
 
-    preloader.isOn = 1;
-    const bool animated = true;
-    window_stack_push(preloader.window, animated);
+void preloader_set_progress(int progress, bool cancelTimer) {
+    progressPercent = progress > 100 ? 0 : progress;
+    layer_mark_dirty(progress_layer);
+    if(cancelTimer){
+        timer_cancel();
+    }
 }
 
 void preloader_set_status(char *text) {
@@ -137,9 +155,7 @@ void preloader_stop() {
 
 void preloader_set_hidden(Window* window) {
     preloader_set_is_on(0);
-    //    APP_LOG(APP_LOG_LEVEL_INFO, "Popping preloader, %p", preloader.window);
     window_stack_remove(preloader.window, false);
-    //    APP_LOG(APP_LOG_LEVEL_INFO, "Popped");
     if (preloader.window) {
         window_destroy(preloader.window);
     }

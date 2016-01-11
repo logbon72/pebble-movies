@@ -294,11 +294,11 @@ void theatres_screen_initialize(int total, enum TheatreUiMode mode, char *movieI
 
     theatresUI.currentIndex = 0;
     theatresUI.window = window_create();
+    preloader_set_hidden(NULL);
 
     window_set_window_handlers(theatresUI.window, (WindowHandlers) {
         .load = theatres_screen_load,
         .unload = theatres_screen_unload,
-        .appear = preloader_set_hidden,
     });
 
 

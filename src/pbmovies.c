@@ -99,9 +99,11 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
         totalReceived += bytesToCopy;
     }
 
+    preloader_set_progress((int) (100 * totalReceived / bufferSize), true);
+
     //APP_LOG(APP_LOG_LEVEL_INFO, "%u of %u received", (unsigned int) totalReceived, (unsigned int) size);
 
-    if (totalReceived >= size) {
+    if (totalReceived >= bufferSize) {
         if (stringDataMode && messageBuffer) {
             *messageBuffer = '\0';
         }
@@ -110,6 +112,7 @@ static void handle_data_received(uint8_t msgCode, uint8_t page, uint32_t size, T
         reset_message_receiver();
 
         preloader_stop();
+        //return;
         switch (msgCode) {
 
             case PB_MSG_IN_THEATRES:

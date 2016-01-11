@@ -55,11 +55,10 @@ static void screen_appear(Window *window) {
     light_enable_interaction();
     //do vibrate
     vibes_short_pulse();
-    preloader_set_hidden(window);
 }
 
 void qr_code_init() {
-
+    preloader_set_hidden(NULL);
     qrCodeScreen.window = window_create();
     qrCodeScreen.qrCode = gbitmap_create_with_data(QR_CODE_BUFFER);
 

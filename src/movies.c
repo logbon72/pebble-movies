@@ -405,7 +405,7 @@ void movies_screen_init(int recordCount, enum MovieUIMode mode, char *theatreId)
     moviesUI.currentTheatreId = theatreId;
 
     moviesUI.window = window_create();
-    preloader_set_hidden(moviesUI.window);
+    preloader_set_hidden(NULL);
     window_set_window_handlers(moviesUI.window, (WindowHandlers) {
         .load = movies_screen_load,
         .unload = movies_screen_unload,
